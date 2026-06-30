@@ -38,7 +38,7 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Verify: unsafe spam reliably triggers observable response
 
 ## Phase 4 — Enemies (current)
-- [ ] **4.1** Arena Guard
+- [x] **4.1** Arena Guard
 - [ ] **4.2** Security Drone
 
 ## Phase 5 — AI Announcer
