@@ -57,7 +57,16 @@ export interface ArenaGuardConfig {
   health: number;
 }
 
-export type EnemyConfig = ArenaGuardConfig;
+/** Phase 4.2 — stationary flying enemy that fires lasers and watches for unsafe shots. */
+export interface SecurityDroneConfig {
+  type: "security-drone";
+  pos: Vec3;
+  /** Max distance (meters) at which the drone can see and fire at the player. */
+  sightRange: number;
+  health: number;
+}
+
+export type EnemyConfig = ArenaGuardConfig | SecurityDroneConfig;
 
 /**
  * Data-driven arena description. Loaded from JSON (see config/arenas/*.json).
