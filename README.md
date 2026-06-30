@@ -14,6 +14,11 @@ currently contains:
 **No combat (firing), enemies, or the real suspicion mechanic yet** — see
 "What's stubbed for later tickets" below.
 
+**Picking this project up?** Read **[`DEVELOPMENT_LOG.md`](./DEVELOPMENT_LOG.md)**
+first — it documents the architecture and gotchas behind everything built so
+far, and lays out the full ticket-by-ticket plan for everything left to
+build, in order, through to a shippable game.
+
 ## Tech stack
 
 | Concern    | Library |
