@@ -4,6 +4,7 @@ import { OrbitControls, FlyControls, Stats } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { useControls, folder } from "leva";
 import { useGameState } from "./systems/gameState";
+import "./systems/suspicion"; // Ticket 3.3 — side-effect import, registers the suspicion model
 import { Player } from "./player/Player";
 import { createFlightState } from "./player/flightState";
 import { FollowCamera } from "./camera/FollowCamera";

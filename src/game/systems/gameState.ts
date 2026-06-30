@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { bus } from "./events";
 
 export type StoryProgress = "believer" | "doubter" | "ally";
 
@@ -62,15 +61,3 @@ export const useGameState = create<GameState>((set) => ({
 
   reset: () => set({ ...DEFAULTS }),
 }));
-
-/**
- * Demo wiring to prove the bus → store architecture is end-to-end.
- *
- * TODO(3.3): replace with the real suspicion model. This placeholder just bumps
- * suspicion when an uncovered shot is fired so we can verify the plumbing.
- */
-bus.on("shotFired", ({ covered }) => {
-  if (!covered) {
-    useGameState.getState().addSuspicion(12);
-  }
-});

@@ -23,14 +23,14 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Emit `sirenActive` / `smokeActive` events on transitions
   - [x] Add cover readout to `DebugOverlay.tsx`
   - [x] Verify: overlay shows cover on/off correctly
-- [ ] **3.3** Suspicion system
-  - [ ] Create `src/game/systems/suspicion.ts` with the spec'd model
-  - [ ] Cover factor math: open ×1.0, siren ×0.1, smoke ×0.15, siren+smoke ×0.0–0.05
-  - [ ] Spam surcharge via rolling window
-  - [ ] Decay when not firing (baseline hidden/not-hidden)
-  - [ ] Thresholds at 60 (warning) and 100 (detected)
-  - [ ] Wire to `addSuspicion` / `decaySuspicion` store actions
-  - [ ] Verify: open fire spikes fast, covered fire barely moves, decay works
+- [x] **3.3** Suspicion system
+  - [x] Create `src/game/systems/suspicion.ts` with the spec'd model
+  - [x] Cover factor math: open ×1.0, siren ×0.1, smoke ×0.15, siren+smoke ×0.0–0.05
+  - [x] Spam surcharge via rolling window
+  - [x] Decay when not firing (baseline hidden/not-hidden)
+  - [x] Thresholds at 60 (warning) and 100 (detected)
+  - [x] Wire to `addSuspicion` / `decaySuspicion` store actions
+  - [x] Verify: open fire spikes fast, covered fire barely moves, decay works
 - [ ] **3.4** Cheating-detected response
   - [ ] Fire `suspicionThreshold: {level: "detected"}` once per crossing
   - [ ] Add observable response (screen alert / forced siren / lockdown state)
