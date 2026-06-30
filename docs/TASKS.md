@@ -42,7 +42,7 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] **4.2** Security Drone
 
 ## Phase 5 — AI Announcer (current)
-- [ ] **5.1** Bark system
+- [x] **5.1** Bark system
 - [ ] **5.2** Character arc flag
 - [ ] **5.3** Voice / captions
 
