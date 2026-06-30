@@ -9,7 +9,9 @@
     "tut_hazards": "Hazard ahead! Razors, crushers, lasers — touch 'em and it'll hurt. Dodge, don't muscle through.",
     "tut_no_ammo": "That hidden popper of yours? Never needs reloading. Don't ask how, just fire when it's safe.",
     "tut_sirens": "Hear that siren? Cover, baby, cover! Fire under the alarm and they're way less likely to clock you.",
-    "tut_smoke": "Step into the smoke and you're a ghost! Fire from in there and the math is even kinder to you."
+    "tut_smoke": "Step into the smoke and you're a ghost! Fire from in there and the math is even kinder to you.",
+    "tut_suspicion": "Keep an eye on that meter. Spam it open and you'll spike fast — patience keeps you under their radar.",
+    "tut_exit": "There's the door! Get to it clean and you've graduated, kid."
   },
   "doubter": {
     "suspicion_warning": "Hm. Getting sloppy, aren't we? They're starting to notice."

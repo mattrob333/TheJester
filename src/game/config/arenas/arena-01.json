@@ -22,7 +22,9 @@
     { "pos": [8.5, 2, 0], "barkId": "tut_hazards", "radius": 2.5 },
     { "pos": [12, 2, 0], "barkId": "tut_no_ammo", "radius": 2.5 },
     { "pos": [15, 2, 0], "barkId": "tut_sirens", "radius": 2.5 },
-    { "pos": [16.5, 2, 0], "barkId": "tut_smoke", "radius": 2.5 }
+    { "pos": [16.5, 2, 0], "barkId": "tut_smoke", "radius": 2.5 },
+    { "pos": [22, 2, 0], "barkId": "tut_suspicion", "radius": 2.5 },
+    { "pos": [36, 2, 0], "barkId": "tut_exit", "radius": 2.5 }
   ],
   "announcer": {
     "intro": "arena01_intro",
