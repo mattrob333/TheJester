@@ -1,0 +1,11 @@
+{
+  "id": "arena-01",
+  "name": "Orientation",
+  "spawn": [0, 2, 0],
+  "exit": [40, 2, 0],
+  "checkpoints": [[0, 2, 0], [20, 2, 0]],
+  "hazards": [],
+  "smokeZones": [],
+  "enemies": [],
+  "announcer": { "intro": "arena01_intro", "events": {} }
+}
