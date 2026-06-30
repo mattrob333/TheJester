@@ -22,7 +22,11 @@ const LOW_HP_THRESHOLD = 30;
 
 function emitBark(barkId: string | undefined) {
   if (!barkId) return;
-  const text = getBarkLine(barkId);
+  // Ticket 5.2: resolve against the current story tier so the same bark id
+  // can read differently as storyProgress advances (believer -> doubter ->
+  // ally), without arena configs needing to know about story tiers at all.
+  const tier = useGameState.getState().storyProgress;
+  const text = getBarkLine(barkId, tier);
   if (!text) return;
   bus.emit("announcerLine", { text });
 }

@@ -1,6 +1,17 @@
 {
-  "arena01_intro": "Ladies and gentlemen, welcome to the gauntlet! Let's see what you've got.",
-  "hazard_warning": "Careful! That hazard nearly had you.",
-  "low_hp": "You're hurt — find cover before you go down!",
-  "suspicion_warning": "Easy now... they're starting to notice."
+  "believer": {
+    "arena01_intro": "Ladies and gentlemen, welcome to the gauntlet! Let's see what you've got.",
+    "hazard_warning": "Careful! That hazard nearly had you.",
+    "low_hp": "You're hurt — find cover before you go down!",
+    "suspicion_warning": "Easy now... they're starting to notice."
+  },
+  "doubter": {
+    "suspicion_warning": "Hm. Getting sloppy, aren't we? They're starting to notice."
+  },
+  "ally": {
+    "arena01_intro": "Welcome back. Let's get you through this one — together.",
+    "hazard_warning": "Watch it — I've got your back, but that hazard nearly had you.",
+    "low_hp": "You're hurt bad. Get to cover — I'll help where I can.",
+    "suspicion_warning": "They're onto you. Let me help you slip away."
+  }
 }
