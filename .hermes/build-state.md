@@ -27,7 +27,7 @@
    - 5.1 ✅ (a0ab585)
    - 5.2 ✅ (0ca0c9a)
    - 5.3 ✅ (satisfied by 5.1's caption work — see notes below, no separate commit)
-6. [ ] Phase 6 — Tutorial → vertical slice (ticket 6.1, in progress — sub-slice 1 of N shipped)
+6. [ ] Phase 6 — Tutorial → vertical slice (ticket 6.1, in progress — sub-slice 2 of N shipped)
 7. [ ] Phase 7+ — Content, bosses, narrative, polish
 
 ## Completed Tasks
@@ -51,19 +51,23 @@
 
 - **Ticket 6.1 sub-slice 1 — Tutorial beacon system + movement/jetpack beats** (ef7b83e): new `src/game/arena/TutorialBeacon.tsx` — a one-shot sensor zone (mirrors `CheckpointZone.tsx`/`SmokeZone.tsx`'s fire-once pattern via a `triggeredRef` guard) that plays an announcer bark on first entry and goes visually dormant after. `types.ts` gained `TutorialBeaconConfig` (`pos`, `barkId`, `radius`) and `ArenaConfig.tutorialBeacons: TutorialBeaconConfig[]`. `Announcer.tsx` exports a new `triggerBark(barkId)` — a thin wrapper around the existing module-private `emitBark` — so non-Announcer systems (this beacon, future scripted triggers) can play a story-tier-aware bark without duplicating the tier-resolution logic. `ArenaLoader.tsx` wires in `<TutorialBeacons beacons={config.tutorialBeacons} />`. `arena-01.json` gained 2 beacons placed before the first hazard (at x=3 and x=6, ahead of the razor hazard at x=10): `tut_movement` and `tut_jetpack` bark ids, both believer-tier lines added to `lines.json`. This is the first 2 of the 8 teaching beats the 6.1 spec lists in order (movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit) — deliberately scoped as one sub-slice per the spec's own instruction to break this content-heavy ticket into pieces rather than rewriting the whole arena in one tick. Verified via `npm run build` (zero TS errors); manual play-test of beacon trigger timing in `npm run dev` not yet exercised — flag for a play-test pass.
 
+- **Ticket 6.1 sub-slice 2 — Tutorial beacon: hazards beat** (ffaad1e): added one `TutorialBeacon` at `[8.5, 2, 0]` (`tut_hazards` bark id) — placed between the jetpack beacon (x=6) and the first real hazard, the razor blade at x=10, so the player gets a warning bark before encountering it. Believer + ally tier lines added to `lines.json` (`tut_hazards` not overridden for doubter — consistent with the existing pattern of only overriding ids where the spec implies a different read). Pure content composition: zero new engine code, reuses the `TutorialBeacon`/`triggerBark` system shipped in sub-slice 1 verbatim. This is teaching beat 3 of 8 (movement ✅ → jetpack ✅ → **hazards ✅** → no-ammo gag → sirens → smoke → suspicion → exit). Verified via `npm run build` (zero TS errors); manual play-test of beacon trigger timing not yet exercised — flag for a play-test pass alongside sub-slice 1's same note.
+
 ## Open Issues / Blockers
 - **Narrative-beat decision needed (flagged, not invented, per spec instruction in DEVELOPMENT_LOG.md 5.2):** which gameplay events should advance `storyProgress` forward (believer → doubter → ally) is an explicit product/narrative decision the spec says not to guess. `setStory(...)` exists and is wired end-to-end (announcer correctly swaps line sets per tier, verified 5.2), but nothing currently calls it during gameplay — it's only reachable via manual/dev invocation (e.g. console). This does not block Phase 6 (tutorial only needs the believer-tier default) but will need a decision before any late-game arena is meant to demonstrate the ally-tier lines for real. Raised as a course-correction in `.hermes/course-corrections.md` for supervisor/user visibility.
 
 ## Next Action
-Continue Phase 6, **Ticket 6.1 (Orientation arena)**, sub-slice 2: add the "hazards" teaching
-beat (a tutorial beacon right before the first real hazard at x=10, e.g. "hazardWarning"-style
-bark introducing the razor blade), then continue in order through the remaining beats: the
-"no ammunition" weapon gag, sirens, smoke, suspicion, exit. Each beat = one TutorialBeacon
-placement + one bark line (reuse the system shipped this tick — no new engine code needed
-unless a genuine gap surfaces). Read `DEVELOPMENT_LOG.md` lines ~589-631 for the full done-when
-criteria; the milestone isn't complete until a player can do the full loop described there in
-one session (movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit,
-encountering both enemies, taking damage, respawning at a checkpoint, reaching the exit).
+Continue Phase 6, **Ticket 6.1 (Orientation arena)**, sub-slice 3: add the "no ammunition"
+weapon gag beat — a beacon (after the hazards cluster, e.g. near x=20-24 by the smoke zone /
+before the enemies) with a dry-joke bark about the weapon never needing reloading (per spec:
+"the weapon never needs reloading and the announcer makes a dry joke about it, don't block on
+documentation that doesn't exist"). Then continue in order: sirens, smoke, suspicion, exit.
+Each beat = one TutorialBeacon placement + one bark line (reuse the system shipped in sub-slice
+1 — no new engine code needed unless a genuine gap surfaces). Read `DEVELOPMENT_LOG.md` lines
+~589-631 for the full done-when criteria; the milestone isn't complete until a player can do the
+full loop described there in one session (movement → jetpack → hazards → no-ammo gag → sirens →
+smoke → suspicion → exit, encountering both enemies, taking damage, respawning at a checkpoint,
+reaching the exit).
 
 ## Pitfalls / Notes for Future Ticks
 - `npm run build` must pass with zero TS errors (strict mode).
@@ -80,4 +84,4 @@ encountering both enemies, taking damage, respawning at a checkpoint, reaching t
 
 - **Ticket 4.2 notes:** `SecurityDrone.tsx` subscribes to `bus.on("shotFired", ...)` directly (not through `suspicion.ts`) to add its own stacking suspicion bump — this is intentional per spec ("a second source ... stacking, not replacing"). The two listeners (this one + `suspicion.ts`'s) both fire on the same event independently; there's no shared "total suspicion this shot" computation, each just calls `addSuspicion` with its own amount and the store sums them. If a future ticket wants to scale the drone's bump by distance/exposure (e.g. closer = more suspicious) that's a clean follow-up — currently it's a flat 8 points whenever the player fires uncovered within sight range, with no falloff. Drone is fully stationary (hover-in-place) — no movement/patrol was specified for it, unlike the Arena Guard's patrol; if a future ticket wants drone movement, it's not blocking 4.2's done-when (drones fire at the player + firing unsafely within sight-line measurably increases suspicion beyond 3.3 alone — both implemented and build-verified).
 
-**Last Updated:** 2026-06-30 — Ticket 6.1 sub-slice 1 shipped (Tutorial beacon system + movement/jetpack teaching beats, commit ef7b83e). Phase 6 in progress (sub-slice 1 of N). Next: 6.1 sub-slice 2 (hazards beat).
+**Last Updated:** 2026-06-30 — Ticket 6.1 sub-slice 2 shipped (Tutorial beacon hazards beat, commit ffaad1e). Phase 6 in progress (sub-slice 2 of N). Next: 6.1 sub-slice 3 (no-ammo gag beat).
