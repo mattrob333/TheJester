@@ -22,7 +22,14 @@ Both the inner builder (every 10m) and outer supervisor (every 30m) write to thi
 ---
 
 ## Open Corrections
-_(none — inner loop in alignment as of last audit)_
+### NEW (this tick, builder, MEDIUM) — Narrative-beat decision needed for storyProgress advancement
+Ticket 5.2 (Character arc flag) is implemented and shipped (commit 0ca0c9a): the announcer correctly resolves bark text per `storyProgress` tier (`believer`/`doubter`/`ally`) via `getBarkLine(id, tier)`, with fallback-to-believer for unoverridden ids. `setStory(...)` (the zustand action that changes the tier) already existed since Phase 0 and works correctly when called.
+
+**What's NOT decided, per the ticket's own explicit instruction not to invent it:** which in-game events/conditions should actually CALL `setStory(...)` to advance the player from believer → doubter → ally as the game progresses. This is a product/narrative decision (e.g. "after N successful arena clears," "after the player sides with/against some character," "scripted at specific story beats in specific arenas") that isn't specified anywhere in `DEVELOPMENT_LOG.md`.
+
+**Impact:** None on Phase 6 (tutorial arena is early-game, believer-tier default is correct and sufficient). Will become relevant once Phase 6+/7+ introduces "late-game arenas" that are meant to demonstrate ally-tier announcer lines for real (rather than only via manual/dev `setStory("ally")` calls) — at that point the build will need either (a) a user/product decision on the actual narrative trigger conditions, or (b) explicit permission for the inner loop to propose+implement a reasonable placeholder trigger.
+
+**Suggested resolution path:** no action needed now. Surface this to the user/supervisor for a narrative decision before any ticket that depends on `storyProgress` actually changing during real gameplay (likely Phase 7+ "narrative wrappers"). Not a blocker for current/next work.
 
 ## Resolved Corrections
 _(history appended below)_

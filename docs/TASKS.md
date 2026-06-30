@@ -41,10 +41,10 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] **4.1** Arena Guard
 - [x] **4.2** Security Drone
 
-## Phase 5 — AI Announcer (current)
+## Phase 5 — AI Announcer (complete)
 - [x] **5.1** Bark system
-- [ ] **5.2** Character arc flag
-- [ ] **5.3** Voice / captions
+- [x] **5.2** Character arc flag
+- [x] **5.3** Voice / captions (text captions satisfy this per spec; TTS not pursued — explicit stretch goal)
 
 ## Phase 6 — Tutorial → Vertical Slice
 - [ ] **6.1** Orientation arena tutorial flow
@@ -62,3 +62,4 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] Phase 2 arena, hazards, survival
 - [x] Phase 3 combat + suspicion (firing, lock-on, cover, suspicion model, lockdown response)
 - [x] Phase 4 enemies (Arena Guard, Security Drone)
+- [x] Phase 5 AI announcer (bark system, story-tier lines, text captions)
