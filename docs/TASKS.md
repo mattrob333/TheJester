@@ -2,7 +2,7 @@
 
 Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md`](../DEVELOPMENT_LOG.md).
 
-## Phase 3 — Combat + Suspicion (current)
+## Phase 3 — Combat + Suspicion (complete)
 - [x] **3.1** Firing + projectiles
   - [x] Extend `useFlightInput.ts` with left-mouse fire tracking
   - [x] Create `src/game/combat/useWeapon.ts` (cooldown + active projectiles ref)
@@ -31,13 +31,13 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Thresholds at 60 (warning) and 100 (detected)
   - [x] Wire to `addSuspicion` / `decaySuspicion` store actions
   - [x] Verify: open fire spikes fast, covered fire barely moves, decay works
-- [ ] **3.4** Cheating-detected response
-  - [ ] Fire `suspicionThreshold: {level: "detected"}` once per crossing
-  - [ ] Add observable response (screen alert / forced siren / lockdown state)
-  - [ ] Stub elite-guard spawn hook for Phase 4
-  - [ ] Verify: unsafe spam reliably triggers observable response
+- [x] **3.4** Cheating-detected response
+  - [x] Fire `suspicionThreshold: {level: "detected"}` once per crossing
+  - [x] Add observable response (screen alert / forced siren / lockdown state)
+  - [x] Stub elite-guard spawn hook for Phase 4
+  - [x] Verify: unsafe spam reliably triggers observable response
 
-## Phase 4 — Enemies
+## Phase 4 — Enemies (current)
 - [ ] **4.1** Arena Guard
 - [ ] **4.2** Security Drone
 
@@ -60,3 +60,4 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] Phase 0 scaffold
 - [x] Phase 1 movement core
 - [x] Phase 2 arena, hazards, survival
+- [x] Phase 3 combat + suspicion (firing, lock-on, cover, suspicion model, lockdown response)
