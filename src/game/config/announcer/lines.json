@@ -5,7 +5,8 @@
     "low_hp": "You're hurt — find cover before you go down!",
     "suspicion_warning": "Easy now... they're starting to notice.",
     "tut_movement": "Get moving! Strafe, throttle, the works — show me you can fly this thing.",
-    "tut_jetpack": "Now punch that boost and climb! Don't be shy with the thrusters."
+    "tut_jetpack": "Now punch that boost and climb! Don't be shy with the thrusters.",
+    "tut_hazards": "Hazard ahead! Razors, crushers, lasers — touch 'em and it'll hurt. Dodge, don't muscle through."
   },
   "doubter": {
     "suspicion_warning": "Hm. Getting sloppy, aren't we? They're starting to notice."
@@ -14,6 +15,7 @@
     "arena01_intro": "Welcome back. Let's get you through this one — together.",
     "hazard_warning": "Watch it — I've got your back, but that hazard nearly had you.",
     "low_hp": "You're hurt bad. Get to cover — I'll help where I can.",
-    "suspicion_warning": "They're onto you. Let me help you slip away."
+    "suspicion_warning": "They're onto you. Let me help you slip away.",
+    "tut_hazards": "Hazard ahead. I'll call out the timing — just listen and move when I say."
   }
 }
