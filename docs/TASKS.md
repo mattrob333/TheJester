@@ -47,7 +47,17 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] **5.3** Voice / captions (text captions satisfy this per spec; TTS not pursued — explicit stretch goal)
 
 ## Phase 6 — Tutorial → Vertical Slice
-- [ ] **6.1** Orientation arena tutorial flow
+- [ ] **6.1** Orientation arena tutorial flow (in progress)
+  - [x] Tutorial beacon system (`TutorialBeacon.tsx` + `triggerBark()`) — reusable one-shot bark trigger
+  - [x] Beat 1: movement (beacon at x=3, `tut_movement`)
+  - [x] Beat 2: jetpack (beacon at x=6, `tut_jetpack`)
+  - [ ] Beat 3: hazards (intro razor/crusher/laser)
+  - [ ] Beat 4: "no ammunition" weapon gag
+  - [ ] Beat 5: sirens
+  - [ ] Beat 6: smoke
+  - [ ] Beat 7: suspicion
+  - [ ] Beat 8: exit
+  - [ ] Verify: full done-when loop in one session (DEVELOPMENT_LOG.md lines ~615-623)
 
 ## Phase 7+
 - [ ] Content multiplication (enemies, arenas, pickups, difficulty)
