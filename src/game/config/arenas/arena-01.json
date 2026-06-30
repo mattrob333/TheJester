@@ -19,7 +19,8 @@
   "tutorialBeacons": [
     { "pos": [3, 2, 0], "barkId": "tut_movement", "radius": 2.5 },
     { "pos": [6, 4, 0], "barkId": "tut_jetpack", "radius": 2.5 },
-    { "pos": [8.5, 2, 0], "barkId": "tut_hazards", "radius": 2.5 }
+    { "pos": [8.5, 2, 0], "barkId": "tut_hazards", "radius": 2.5 },
+    { "pos": [12, 2, 0], "barkId": "tut_no_ammo", "radius": 2.5 }
   ],
   "announcer": {
     "intro": "arena01_intro",

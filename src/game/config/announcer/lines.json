@@ -6,7 +6,8 @@
     "suspicion_warning": "Easy now... they're starting to notice.",
     "tut_movement": "Get moving! Strafe, throttle, the works — show me you can fly this thing.",
     "tut_jetpack": "Now punch that boost and climb! Don't be shy with the thrusters.",
-    "tut_hazards": "Hazard ahead! Razors, crushers, lasers — touch 'em and it'll hurt. Dodge, don't muscle through."
+    "tut_hazards": "Hazard ahead! Razors, crushers, lasers — touch 'em and it'll hurt. Dodge, don't muscle through.",
+    "tut_no_ammo": "That hidden popper of yours? Never needs reloading. Don't ask how, just fire when it's safe."
   },
   "doubter": {
     "suspicion_warning": "Hm. Getting sloppy, aren't we? They're starting to notice."
@@ -16,6 +17,7 @@
     "hazard_warning": "Watch it — I've got your back, but that hazard nearly had you.",
     "low_hp": "You're hurt bad. Get to cover — I'll help where I can.",
     "suspicion_warning": "They're onto you. Let me help you slip away.",
-    "tut_hazards": "Hazard ahead. I'll call out the timing — just listen and move when I say."
+    "tut_hazards": "Hazard ahead. I'll call out the timing — just listen and move when I say.",
+    "tut_no_ammo": "Still got infinite shots on that thing. Lucky you. Just don't get cocky with it."
   }
 }
