@@ -16,5 +16,12 @@
     { "type": "arena-guard", "pos": [14, 2, 6], "patrolRadius": 4, "health": 30 },
     { "type": "security-drone", "pos": [24, 5, -4], "sightRange": 18, "health": 15 }
   ],
-  "announcer": { "intro": "arena01_intro", "events": {} }
+  "announcer": {
+    "intro": "arena01_intro",
+    "events": {
+      "hazardWarning": "hazard_warning",
+      "lowHp": "low_hp",
+      "suspicionWarning": "suspicion_warning"
+    }
+  }
 }

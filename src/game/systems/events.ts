@@ -16,6 +16,8 @@ export type GameEvents = {
   checkpointReached: { pos: [number, number, number] };
   suspicionThreshold: { level: "warning" | "detected" };
   lockdownActive: { on: boolean };
+  /** Ticket 5.1 — announcer bark resolved to display text, for the HUD caption. */
+  announcerLine: { text: string };
 };
 
 /**
