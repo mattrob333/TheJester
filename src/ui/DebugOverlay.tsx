@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { bus, type GameEvents } from "../game/systems/events";
 import { useGameState } from "../game/systems/gameState";
+import { coverState } from "../game/systems/coverState";
 import { telemetry } from "./telemetry";
 
 type LogEntry = { id: number; type: keyof GameEvents; payload: string };
@@ -22,6 +23,7 @@ export function DebugOverlay() {
   const [camPos, setCamPos] = useState<[number, number, number]>([0, 0, 0]);
   const [speed, setSpeed] = useState(0);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [cover, setCover] = useState({ siren: false, smoke: false });
 
   // Own rAF loop: FPS + camera position + player speed (read from the telemetry bridge).
   useEffect(() => {
@@ -36,6 +38,7 @@ export function DebugOverlay() {
         last = now;
         setCamPos(telemetry.camPos);
         setSpeed(telemetry.speed);
+        setCover({ siren: coverState.sirenActive, smoke: coverState.smokeActive });
       }
       raf = requestAnimationFrame(tick);
     };
@@ -79,6 +82,9 @@ export function DebugOverlay() {
         <Row label="health" value={`${health} / ${maxHealth}`} />
         <Row label="suspicion" value={`${suspicion}`} />
         <Row label="story" value={storyProgress} />
+        <Row label="siren" value={cover.siren ? "ON" : "off"} />
+        <Row label="smoke" value={cover.smoke ? "ON" : "off"} />
+        <Row label="covered" value={cover.siren || cover.smoke ? "YES" : "no"} />
       </div>
 
       <div style={styles.section}>

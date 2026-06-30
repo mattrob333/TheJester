@@ -6,6 +6,7 @@ import { Bounds } from "./Bounds";
 import { HazardField } from "./hazards/HazardField";
 import { CheckpointZone } from "./CheckpointZone";
 import { TargetDummy } from "../combat/TargetDummy";
+import { SmokeZones } from "./SmokeZone";
 
 /**
  * Arena loader (Ticket 2.1) — builds the level from a JSON config: floor,
@@ -39,6 +40,7 @@ export function ArenaLoader({ config = activeArena }: { config?: ArenaConfig }) 
       <Bounds {...config.bounds} />
 
       <HazardField hazards={config.hazards} />
+      <SmokeZones zones={config.smokeZones} />
 
       {config.dummies.map((dummy, i) => (
         <TargetDummy key={i} config={dummy} />

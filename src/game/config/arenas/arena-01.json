@@ -10,7 +10,7 @@
     { "type": "crusher", "pos": [18, 2, 0], "interval": 2.5 },
     { "type": "laser", "pos": [28, 2, 0], "axis": "x", "length": 6, "interval": 3 }
   ],
-  "smokeZones": [],
+  "smokeZones": [{ "pos": [20, 2, 0], "radius": 4 }],
   "dummies": [{ "pos": [34, 2, 0], "radius": 1.2 }],
   "enemies": [],
   "announcer": { "intro": "arena01_intro", "events": {} }

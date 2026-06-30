@@ -1,10 +1,11 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody, CylinderCollider } from "@react-three/rapier";
 import type { Group } from "three";
 import { useGameState } from "../../systems/gameState";
 import { bus } from "../../systems/events";
 import { HIT_COOLDOWN } from "./hazardTiming";
+import { setSirenSourceActive, clearSirenSource } from "../../systems/coverState";
 import type { RazorHazardConfig } from "../../types";
 
 const DAMAGE = 18;
@@ -16,11 +17,25 @@ const DAMAGE = 18;
  *
  * The danger sensor is a static cylinder; the blade mesh spins for visual
  * telegraphing only — collision detection doesn't depend on blade rotation.
+ *
+ * Ticket 3.2 — when `config.siren` is set, this hazard is always-armed so it
+ * registers as a permanently-active siren source for the lifetime of the
+ * component (no cycling, unlike the crusher/laser's idle/warning/active
+ * phases — see DEVELOPMENT_LOG.md 3.2 notes on why siren is a registry of
+ * sources rather than a single per-hazard flag the suspicion system reads
+ * directly).
  */
 export function RazorHazard({ config }: { config: RazorHazardConfig }) {
   const bladeRef = useRef<Group>(null);
   const overlapCount = useRef(0);
   const lastHit = useRef(-Infinity);
+  const sourceId = useRef(`razor-${config.pos.join(",")}`).current;
+
+  useEffect(() => {
+    if (!config.siren) return;
+    setSirenSourceActive(sourceId, true);
+    return () => clearSirenSource(sourceId);
+  }, [config.siren, sourceId]);
 
   useFrame((state, dt) => {
     if (bladeRef.current) {
