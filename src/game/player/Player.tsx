@@ -11,6 +11,7 @@ import { bus } from "../systems/events";
 import { fireProjectile } from "../combat/useWeapon";
 import { findNearestTarget } from "../combat/targeting";
 import { lockOnState } from "../combat/lockOn";
+import { playerTracking } from "./playerTracking";
 
 /**
  * Jetpack flight controller (Ticket 1.1).
@@ -160,6 +161,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
     // Elimination respawn (Ticket 2.4): teleport to the last checkpoint,
     // clear velocity, restore health, and reset suspicion.
     const gs = useGameState.getState();
+    playerTracking.alive = gs.health > 0;
     if (gs.health <= 0) {
       const [cx, cy, cz] = gs.checkpoint;
       body.setTranslation({ x: cx, y: cy, z: cz }, true);
@@ -235,6 +237,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
 
     const p = body.translation();
     flightState.position.set(p.x, p.y, p.z);
+    playerTracking.position.set(p.x, p.y, p.z);
     const v = body.linvel();
     flightState.velocity.set(v.x, v.y, v.z);
     flightState.speed = flightState.velocity.length();

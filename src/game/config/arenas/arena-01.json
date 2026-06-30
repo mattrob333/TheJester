@@ -12,6 +12,6 @@
   ],
   "smokeZones": [{ "pos": [20, 2, 0], "radius": 4 }],
   "dummies": [{ "pos": [34, 2, 0], "radius": 1.2 }],
-  "enemies": [],
+  "enemies": [{ "type": "arena-guard", "pos": [14, 2, 6], "patrolRadius": 4, "health": 30 }],
   "announcer": { "intro": "arena01_intro", "events": {} }
 }

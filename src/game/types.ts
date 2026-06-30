@@ -48,6 +48,17 @@ export interface TargetDummyConfig {
   radius: number;
 }
 
+/** Phase 4.1 — patrolling melee enemy. */
+export interface ArenaGuardConfig {
+  type: "arena-guard";
+  pos: Vec3;
+  /** Half-distance the guard patrols back and forth along the X axis from `pos`. */
+  patrolRadius: number;
+  health: number;
+}
+
+export type EnemyConfig = ArenaGuardConfig;
+
 /**
  * Data-driven arena description. Loaded from JSON (see config/arenas/*.json).
  */
@@ -64,7 +75,7 @@ export interface ArenaConfig {
   /** Phase 3.1 — target dummies for combat verification. */
   dummies: TargetDummyConfig[];
   /** Phase 4 — enemy spawn descriptors. */
-  enemies: unknown[];
+  enemies: EnemyConfig[];
   announcer: {
     intro: string;
     /** Map of event key -> announcer bark id. Phase 5. */
