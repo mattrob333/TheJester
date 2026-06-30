@@ -1,10 +1,16 @@
 # The Jester
 
 A 3D jetpack arena game built with **React Three Fiber**. This repository
-currently contains the **Phase 0 scaffold** (tickets 0.1 / 0.3 / 0.4): a
-deployable app shell, a controllable 3D dev scene, a typed event bus, a central
-game-state store, and a glTF asset-loading pipeline. **No gameplay is
-implemented yet** — see "What's stubbed for later tickets" below.
+currently contains:
+
+- **Phase 0 scaffold** (tickets 0.1 / 0.3 / 0.4) — app shell, typed event bus,
+  central game-state store, glTF asset pipeline.
+- **Phase 1 movement core** (tickets 1.1 / 1.2 / 1.3) — a custom 3D jetpack
+  flight controller, a third-person follow camera, and collision against test
+  bounds.
+
+**No combat, hazards, enemies, or suspicion mechanic yet** — see "What's
+stubbed for later tickets" below.
 
 ## Tech stack
 
@@ -12,7 +18,7 @@ implemented yet** — see "What's stubbed for later tickets" below.
 | ---------- | ------- |
 | Build/dev  | Vite + React + TypeScript (strict) |
 | Rendering  | `three`, `@react-three/fiber`, `@react-three/drei` |
-| Physics    | `@react-three/rapier` (provider + static floor + placeholder body only) |
+| Physics    | `@react-three/rapier` (dynamic player body, static floor/walls/ceiling) |
 | Game state | `zustand` (read/writable outside the React render loop) |
 | Dev GUI    | `leva` + drei `<Stats/>` (FPS) |
 | Events     | `mitt` (typed singleton bus) |
@@ -27,18 +33,33 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-You should see: a lit infinite grid floor, a magenta placeholder player capsule,
-orbit camera control, the leva panel (top-right), and the debug overlay
-(top-left).
+You should see: a lit infinite grid floor inside a faintly-walled test box, a
+magenta placeholder player capsule, a third-person follow camera, the leva
+panel (top-right), and the debug overlay (top-left).
 
-### Dev controls
+### Flight controls (follow camera mode — the default)
 
-- **Drag** to orbit, **scroll** to zoom (OrbitControls).
-- leva **`free-fly camera`** toggle → swaps to a fly-style camera (WASD + drag).
-- leva **`physics debug`** toggle → draws Rapier collider wireframes.
-- leva **`Test: emit shotFired`** button → emits `shotFired {covered:false}` on
-  the bus. Watch the debug overlay log it **and** `suspicion` tick up by 12
-  (proves bus → store wiring end-to-end).
+- **Click the canvas** to engage pointer lock (mouse look).
+- **W / A / S / D** — move forward/back/strafe, relative to where you're looking.
+- **Mouse** — look (yaw + pitch); forward thrust follows pitch, so looking up
+  and pressing W flies up.
+- **Space / Ctrl** — vertical thrust up/down.
+- **Shift** — boost (higher top speed).
+- No input → the jetpack **hovers** in place (gravity is zeroed; velocity is
+  fully input-driven, not simulated free-fall).
+- **Esc** releases pointer lock (browser default).
+
+### Dev controls (leva panel)
+
+- **`camera mode`** — `follow` (gameplay, above) / `orbit` (drei OrbitControls)
+  / `freeFly` (drei FlyControls). Flight input is only live in `follow` mode so
+  it never fights the dev camera controls for the mouse.
+- **`physics debug`** — draws Rapier collider wireframes.
+- **`Test: emit shotFired`** — emits `shotFired {covered:false}` on the bus.
+  Watch the debug overlay log it **and** `suspicion` tick up by 12 (proves
+  bus → store wiring end-to-end).
+- **Flight → tuning** — live-tunable `maxSpeed`, `boostMultiplier`,
+  `acceleration` (thrust response), `mouseSensitivity`.
 
 ## Build
 
@@ -91,19 +112,26 @@ src/
   main.tsx                      app entry
   App.tsx                       <Canvas> + HTML overlay layer
   game/
-    Game.tsx                    scene root: lights, floor, player, dev camera, leva
+    Game.tsx                    scene root: lights, floor, bounds, player, camera, leva
     systems/
       events.ts                 typed event bus + GameEvents map (mitt)
       gameState.ts              zustand store + demo bus→store wiring
-    player/Player.tsx           placeholder capsule + static Rapier body (glb slot)
-    arena/ArenaLoader.tsx       reads arena config, logs it, renders spawn/exit markers
+    player/
+      Player.tsx                jetpack flight controller (dynamic Rapier body, glb slot)
+      flightState.ts            shared per-frame flight data (position/yaw/pitch/velocity)
+      useFlightInput.ts         keyboard + pointer-lock mouse-look input hook
+    camera/
+      FollowCamera.tsx          third-person follow cam, raycast wall-clip avoidance
+    arena/
+      ArenaLoader.tsx           reads arena config, logs it, renders spawn/exit markers
+      Bounds.tsx                Phase-1 test-box walls/ceiling (collision proving ground)
     config/arenas/arena-01.json example arena config
     types.ts                    ArenaConfig + shared types
   lib/loadGltf.ts               drei useGLTF + Draco helper (+ preload)
   ui/
-    DebugOverlay.tsx            FPS, camera pos, live GameState, event log
+    DebugOverlay.tsx            FPS, camera pos, speed, live GameState, event log
     Hud.tsx                     in-game HUD stub (empty)
-    telemetry.ts                in-canvas → overlay bridge for camera position
+    telemetry.ts                in-canvas → overlay bridge (camera position, speed)
 public/
   models/                       .glb assets (served statically)
   draco/                        optional self-hosted Draco decoder
@@ -111,11 +139,11 @@ public/
 
 ## What's stubbed for later tickets
 
-This scaffold deliberately implements **only** the foundation. Left for later:
+This repo deliberately implements only the foundation + movement core so far.
+Left for later:
 
-- **Flight physics / jetpack feel** (1.1) — player body is static, no input.
-- **Follow camera** (1.2) — dev OrbitControls/FlyControls only for now.
-- **Hazards & smoke zones** (2.x) — `hazards`/`smokeZones` parsed but not spawned.
+- **Hazards & smoke zones** (2.x) — `hazards`/`smokeZones` parsed but not spawned;
+  `Bounds.tsx` is a placeholder test box, not real arena geometry.
 - **Health / damage UI** (2.3) — only the debug readout exists.
 - **Checkpoint logic** (2.4) — checkpoints in config but no activation logic.
 - **Firing / aiming** (3.x) — only the `shotFired` smoke-test button.
@@ -125,5 +153,5 @@ This scaffold deliberately implements **only** the foundation. Left for later:
 - **Announcer barks** (5.x) — `announcer` config carried but unused.
 - **Tutorial** (6), bosses, narrative, audio, final HUD.
 
-The event map, store shape, arena schema, and asset pipeline are intentionally
-extensible so later systems bolt on without rework.
+The event map, store shape, arena schema, flight state, and asset pipeline are
+intentionally extensible so later systems bolt on without rework.

@@ -20,9 +20,10 @@ export function DebugOverlay() {
 
   const [fps, setFps] = useState(0);
   const [camPos, setCamPos] = useState<[number, number, number]>([0, 0, 0]);
+  const [speed, setSpeed] = useState(0);
   const [log, setLog] = useState<LogEntry[]>([]);
 
-  // Own rAF loop: FPS + camera position (read from the telemetry bridge).
+  // Own rAF loop: FPS + camera position + player speed (read from the telemetry bridge).
   useEffect(() => {
     let raf = 0;
     let frames = 0;
@@ -34,6 +35,7 @@ export function DebugOverlay() {
         frames = 0;
         last = now;
         setCamPos(telemetry.camPos);
+        setSpeed(telemetry.speed);
       }
       raf = requestAnimationFrame(tick);
     };
@@ -69,6 +71,7 @@ export function DebugOverlay() {
           label="cam"
           value={`${fmt(camPos[0])}, ${fmt(camPos[1])}, ${fmt(camPos[2])}`}
         />
+        <Row label="speed" value={`${fmt(speed)} m/s`} />
       </div>
 
       <div style={styles.section}>
@@ -76,6 +79,12 @@ export function DebugOverlay() {
         <Row label="health" value={`${health} / ${maxHealth}`} />
         <Row label="suspicion" value={`${suspicion}`} />
         <Row label="story" value={storyProgress} />
+      </div>
+
+      <div style={styles.section}>
+        <div style={styles.title}>controls (follow camera)</div>
+        <div style={styles.dim}>click canvas to look · WASD move</div>
+        <div style={styles.dim}>Space/Ctrl up/down · Shift boost</div>
       </div>
 
       <div style={styles.section}>

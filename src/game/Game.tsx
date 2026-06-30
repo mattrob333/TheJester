@@ -1,9 +1,13 @@
+import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Grid, OrbitControls, FlyControls, Stats } from "@react-three/drei";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
-import { useControls, button } from "leva";
+import { useControls, button, folder } from "leva";
 import { bus } from "./systems/events";
 import { Player } from "./player/Player";
+import { createFlightState } from "./player/flightState";
+import { FollowCamera } from "./camera/FollowCamera";
+import { Bounds } from "./arena/Bounds";
 import { ArenaLoader } from "./arena/ArenaLoader";
 import { telemetry } from "../ui/telemetry";
 
@@ -39,14 +43,30 @@ function Floor() {
 }
 
 export function Game() {
-  // Dev controls: free-fly toggle + a bus smoke-test button.
-  const { freeFly, showPhysicsDebug } = useControls("Dev", {
-    freeFly: { value: false, label: "free-fly camera" },
+  const flightState = useRef(createFlightState()).current;
+
+  // Dev controls: camera mode + physics debug + the Phase 0 bus smoke-test button.
+  const { cameraMode, showPhysicsDebug } = useControls("Dev", {
+    cameraMode: {
+      value: "follow",
+      options: ["follow", "orbit", "freeFly"],
+      label: "camera mode",
+    },
     showPhysicsDebug: { value: false, label: "physics debug" },
-    "Test: emit shotFired": button(() =>
-      bus.emit("shotFired", { covered: false }),
-    ),
+    "Test: emit shotFired": button(() => bus.emit("shotFired", { covered: false })),
   });
+
+  // Flight tuning — exposed live so feel can be dialed in without redeploying.
+  const flightSettings = useControls("Flight", {
+    tuning: folder({
+      maxSpeed: { value: 12, min: 2, max: 40, step: 0.5 },
+      boostMultiplier: { value: 1.8, min: 1, max: 4, step: 0.1 },
+      acceleration: { value: 6, min: 0.5, max: 20, step: 0.5, label: "thrust response" },
+      mouseSensitivity: { value: 0.0022, min: 0.0005, max: 0.01, step: 0.0001 },
+    }),
+  });
+
+  const flightActive = cameraMode === "follow";
 
   return (
     <>
@@ -68,21 +88,25 @@ export function Game() {
 
       <Physics debug={showPhysicsDebug} gravity={[0, -9.81, 0]}>
         <Floor />
-        <Player />
+        <Bounds />
+        <Player flightState={flightState} settings={flightSettings} active={flightActive} />
+
+        {/*
+          "follow" = real gameplay camera, tracks the player. It must live
+          inside <Physics> — it raycasts against the world via useRapier().
+          "orbit" / "freeFly" = Phase 0 dev cameras for inspecting the scene;
+          flight input is disabled in these modes so it never fights the
+          camera controls for the mouse.
+        */}
+        {cameraMode === "follow" && <FollowCamera state={flightState} />}
       </Physics>
 
       <ArenaLoader />
 
-      {/* Dev camera: OrbitControls by default, FlyControls when freeFly is on. */}
-      {freeFly ? (
-        <FlyControls movementSpeed={15} rollSpeed={0.6} dragToLook />
-      ) : (
-        <OrbitControls
-          makeDefault
-          target={[0, 1, 0]}
-          maxPolarAngle={Math.PI * 0.495}
-        />
+      {cameraMode === "orbit" && (
+        <OrbitControls makeDefault target={[0, 1, 0]} maxPolarAngle={Math.PI * 0.495} />
       )}
+      {cameraMode === "freeFly" && <FlyControls movementSpeed={15} rollSpeed={0.6} dragToLook />}
 
       <CameraReporter />
       <Stats />

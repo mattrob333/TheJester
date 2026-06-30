@@ -4,6 +4,7 @@
  * DebugOverlay OUTSIDE the canvas. Plain mutable object — no re-render churn;
  * the overlay polls it from its own requestAnimationFrame loop.
  */
-export const telemetry: { camPos: [number, number, number] } = {
+export const telemetry: { camPos: [number, number, number]; speed: number } = {
   camPos: [0, 0, 0],
+  speed: 0,
 };
