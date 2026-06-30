@@ -35,3 +35,4 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+.hermes/run.lock
