@@ -51,8 +51,8 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Tutorial beacon system (`TutorialBeacon.tsx` + `triggerBark()`) — reusable one-shot bark trigger
   - [x] Beat 1: movement (beacon at x=3, `tut_movement`)
   - [x] Beat 2: jetpack (beacon at x=6, `tut_jetpack`)
-  - [ ] Beat 3: hazards (intro razor/crusher/laser)
-  - [ ] Beat 4: "no ammunition" weapon gag
+  - [x] Beat 3: hazards (beacon at x=8.5, `tut_hazards`)
+  - [x] Beat 4: "no ammunition" weapon gag (beacon at x=12, `tut_no_ammo`)
   - [ ] Beat 5: sirens
   - [ ] Beat 6: smoke
   - [ ] Beat 7: suspicion
