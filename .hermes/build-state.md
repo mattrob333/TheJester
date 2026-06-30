@@ -7,8 +7,8 @@
 **Status:** Phase 3 combat + suspicion system in progress
 
 ## Architecture: Two-Tier Build Loop
-- Inner Loop (cron `<INNER_ID>`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
-- Outer Loop (cron `<OUTER_ID>`) — every 30m: active supervisor (audits + writes corrections + trivial fixes + escalation).
+- Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
+- Outer Loop (cron `edd7a15537da`) — every 30m: active supervisor (audits + writes corrections + trivial fixes + escalation).
 
 ## Phases / Waves
 1. [x] Phase 0 — Scaffold (tickets 0.1, 0.3, 0.4)
