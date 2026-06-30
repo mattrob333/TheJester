@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { bus, type GameEvents } from "../game/systems/events";
 import { useGameState } from "../game/systems/gameState";
 import { coverState } from "../game/systems/coverState";
+import { isLockdownActive } from "../game/systems/lockdown";
 import { telemetry } from "./telemetry";
 
 type LogEntry = { id: number; type: keyof GameEvents; payload: string };
@@ -24,6 +25,7 @@ export function DebugOverlay() {
   const [speed, setSpeed] = useState(0);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [cover, setCover] = useState({ siren: false, smoke: false });
+  const [lockdown, setLockdown] = useState(false);
 
   // Own rAF loop: FPS + camera position + player speed (read from the telemetry bridge).
   useEffect(() => {
@@ -39,6 +41,7 @@ export function DebugOverlay() {
         setCamPos(telemetry.camPos);
         setSpeed(telemetry.speed);
         setCover({ siren: coverState.sirenActive, smoke: coverState.smokeActive });
+        setLockdown(isLockdownActive());
       }
       raf = requestAnimationFrame(tick);
     };
@@ -85,7 +88,12 @@ export function DebugOverlay() {
         <Row label="siren" value={cover.siren ? "ON" : "off"} />
         <Row label="smoke" value={cover.smoke ? "ON" : "off"} />
         <Row label="covered" value={cover.siren || cover.smoke ? "YES" : "no"} />
+        <Row label="lockdown" value={lockdown ? "DETECTED" : "clear"} />
       </div>
+
+      {lockdown && (
+        <div style={styles.lockdownAlert}>⚠ CHEATING DETECTED — LOCKDOWN ⚠</div>
+      )}
 
       <div style={styles.section}>
         <div style={styles.title}>controls (follow camera)</div>
@@ -158,4 +166,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   evType: { color: "#34d399" },
   dim: { color: "#7c83b3" },
+  lockdownAlert: {
+    background: "rgba(220,38,38,0.85)",
+    border: "1px solid rgba(248,113,113,0.9)",
+    borderRadius: 8,
+    padding: "8px 10px",
+    marginBottom: 8,
+    color: "#fff",
+    fontWeight: 700,
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
 };

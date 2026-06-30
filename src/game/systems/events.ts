@@ -15,6 +15,7 @@ export type GameEvents = {
   playerHidden: { hidden: boolean };
   checkpointReached: { pos: [number, number, number] };
   suspicionThreshold: { level: "warning" | "detected" };
+  lockdownActive: { on: boolean };
 };
 
 /**

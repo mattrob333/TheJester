@@ -5,6 +5,7 @@ import { Physics } from "@react-three/rapier";
 import { useControls, folder } from "leva";
 import { useGameState } from "./systems/gameState";
 import "./systems/suspicion"; // Ticket 3.3 — side-effect import, registers the suspicion model
+import "./systems/lockdown"; // Ticket 3.4 — side-effect import, registers the lockdown response
 import { Player } from "./player/Player";
 import { createFlightState } from "./player/flightState";
 import { FollowCamera } from "./camera/FollowCamera";
