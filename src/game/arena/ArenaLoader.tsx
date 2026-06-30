@@ -1,17 +1,17 @@
 import { useEffect } from "react";
 import type { ArenaConfig, Vec3 } from "../types";
-import arena01 from "../config/arenas/arena-01.json";
+import { activeArena } from "../config/activeArena";
+import { Floor } from "./Floor";
+import { Bounds } from "./Bounds";
+import { HazardField } from "./hazards/HazardField";
+import { CheckpointZone } from "./CheckpointZone";
 
 /**
- * Arena loader STUB (sets up data-driven content).
- *
- * Phase 0: read an arena config, log it, and render debug markers at `spawn`
- * (green) and `exit` (red). No hazard/enemy/checkpoint spawning yet — those are
- * Phases 2 and 4.
+ * Arena loader (Ticket 2.1) — builds the level from a JSON config: floor,
+ * walls, hazards, checkpoints, and spawn/exit markers. Editing the config
+ * moves all of it. Must be rendered inside <Physics> — floor/walls/hazards
+ * are all Rapier bodies.
  */
-
-// JSON imports widen tuples to number[]; assert the validated shape via unknown.
-const arena = arena01 as unknown as ArenaConfig;
 
 function Marker({ pos, color }: { pos: Vec3; color: string }) {
   return (
@@ -26,7 +26,7 @@ function Marker({ pos, color }: { pos: Vec3; color: string }) {
   );
 }
 
-export function ArenaLoader({ config = arena }: { config?: ArenaConfig }) {
+export function ArenaLoader({ config = activeArena }: { config?: ArenaConfig }) {
   useEffect(() => {
     // Prove the data-driven load works end-to-end.
     console.info("[ArenaLoader] loaded arena:", config);
@@ -34,6 +34,15 @@ export function ArenaLoader({ config = arena }: { config?: ArenaConfig }) {
 
   return (
     <group>
+      <Floor width={config.bounds.width} depth={config.bounds.depth} />
+      <Bounds {...config.bounds} />
+
+      <HazardField hazards={config.hazards} />
+
+      {config.checkpoints.map((pos, i) => (
+        <CheckpointZone key={i} pos={pos} />
+      ))}
+
       {/* spawn — green */}
       <Marker pos={config.spawn} color="#22c55e" />
       {/* exit — red */}

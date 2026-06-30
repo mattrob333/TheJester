@@ -1,11 +1,13 @@
-import { Component, Suspense, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RigidBody, CapsuleCollider, type RapierRigidBody } from "@react-three/rapier";
-import { Euler, MathUtils, Quaternion, Vector3 } from "three";
+import { Euler, MathUtils, Quaternion, Vector3, type Mesh, type MeshStandardMaterial } from "three";
 import { loadGltf } from "../../lib/loadGltf";
 import { useFlightInput } from "./useFlightInput";
 import type { FlightState } from "./flightState";
 import { telemetry } from "../../ui/telemetry";
+import { useGameState } from "../systems/gameState";
+import { bus } from "../systems/events";
 
 /**
  * Jetpack flight controller (Ticket 1.1).
@@ -57,6 +59,54 @@ class ModelBoundary extends Component<
   }
 }
 
+const FLASH_DURATION = 0.25; // seconds
+
+/**
+ * "Suit damage" feedback (Ticket 2.3): a translucent red halo around the
+ * player that flashes briefly on `playerDamaged`. Implemented as a sibling
+ * overlay rather than recoloring the capsule/glb material directly, so it
+ * works the same whether the placeholder capsule or a real model is active.
+ */
+function DamageFlash() {
+  const ref = useRef<Mesh>(null);
+  const pending = useRef(false);
+  const flashStart = useRef(-Infinity);
+
+  useEffect(() => {
+    const handler = () => {
+      pending.current = true;
+    };
+    bus.on("playerDamaged", handler);
+    return () => bus.off("playerDamaged", handler);
+  }, []);
+
+  useFrame((state) => {
+    const now = state.clock.elapsedTime;
+    if (pending.current) {
+      pending.current = false;
+      flashStart.current = now;
+    }
+    if (!ref.current) return;
+    const mat = ref.current.material as MeshStandardMaterial;
+    const elapsed = now - flashStart.current;
+    mat.opacity = elapsed < FLASH_DURATION ? 0.6 * (1 - elapsed / FLASH_DURATION) : 0;
+  });
+
+  return (
+    <mesh ref={ref} scale={1.25}>
+      <capsuleGeometry args={[RADIUS, HALF_HEIGHT * 2, 8, 16]} />
+      <meshStandardMaterial
+        color="#ef4444"
+        emissive="#ef4444"
+        emissiveIntensity={2}
+        transparent
+        opacity={0}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
 export interface FlightSettings {
   /** Top horizontal/vertical speed, m/s. */
   maxSpeed: number;
@@ -97,6 +147,20 @@ export function Player({ flightState, settings, active }: PlayerProps) {
   useFrame((_, dt) => {
     const body = bodyRef.current;
     if (!body) return;
+
+    // Elimination respawn (Ticket 2.4): teleport to the last checkpoint,
+    // clear velocity, restore health, and reset suspicion.
+    const gs = useGameState.getState();
+    if (gs.health <= 0) {
+      const [cx, cy, cz] = gs.checkpoint;
+      body.setTranslation({ x: cx, y: cy, z: cz }, true);
+      body.setLinvel(zero, true);
+      flightState.position.set(cx, cy, cz);
+      flightState.velocity.set(0, 0, 0);
+      flightState.speed = 0;
+      gs.respawn();
+      return;
+    }
 
     if (active) {
       flightState.yaw -= input.mouseDX * settings.mouseSensitivity;
@@ -170,6 +234,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
           <PlayerModel />
         </Suspense>
       </ModelBoundary>
+      <DamageFlash />
     </RigidBody>
   );
 }

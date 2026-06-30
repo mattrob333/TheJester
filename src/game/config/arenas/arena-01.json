@@ -4,7 +4,12 @@
   "spawn": [0, 2, 0],
   "exit": [40, 2, 0],
   "checkpoints": [[0, 2, 0], [20, 2, 0]],
-  "hazards": [],
+  "bounds": { "width": 100, "height": 24, "depth": 30 },
+  "hazards": [
+    { "type": "razor", "pos": [10, 2, 0], "rpm": 120, "siren": true },
+    { "type": "crusher", "pos": [18, 2, 0], "interval": 2.5 },
+    { "type": "laser", "pos": [28, 2, 0], "axis": "x", "length": 6, "interval": 3 }
+  ],
   "smokeZones": [],
   "enemies": [],
   "announcer": { "intro": "arena01_intro", "events": {} }

@@ -2,6 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
 import { Game } from "./game/Game";
 import { DebugOverlay } from "./ui/DebugOverlay";
+import { DamageFlash } from "./ui/DamageFlash";
 import { Hud } from "./ui/Hud";
 
 /**
@@ -22,6 +23,7 @@ export default function App() {
 
       {/* HTML overlay layers (outside the canvas). */}
       <Hud />
+      <DamageFlash />
       <DebugOverlay />
       <Leva collapsed={false} />
     </div>

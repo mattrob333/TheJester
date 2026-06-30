@@ -1,14 +1,15 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Grid, OrbitControls, FlyControls, Stats } from "@react-three/drei";
-import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
+import { OrbitControls, FlyControls, Stats } from "@react-three/drei";
+import { Physics } from "@react-three/rapier";
 import { useControls, button, folder } from "leva";
 import { bus } from "./systems/events";
+import { useGameState } from "./systems/gameState";
 import { Player } from "./player/Player";
 import { createFlightState } from "./player/flightState";
 import { FollowCamera } from "./camera/FollowCamera";
-import { Bounds } from "./arena/Bounds";
 import { ArenaLoader } from "./arena/ArenaLoader";
+import { activeArena } from "./config/activeArena";
 import { telemetry } from "../ui/telemetry";
 
 /** Reports the live camera position into the telemetry bridge each frame. */
@@ -20,30 +21,14 @@ function CameraReporter() {
   return null;
 }
 
-/** Large static ground with a matching physics body. */
-function Floor() {
-  return (
-    <RigidBody type="fixed" colliders={false}>
-      <CuboidCollider args={[100, 0.1, 100]} position={[0, -0.1, 0]} />
-      <Grid
-        args={[200, 200]}
-        cellSize={1}
-        cellThickness={0.6}
-        cellColor="#1f2937"
-        sectionSize={10}
-        sectionThickness={1.2}
-        sectionColor="#3b82f6"
-        fadeDistance={120}
-        fadeStrength={1}
-        infiniteGrid
-        followCamera={false}
-      />
-    </RigidBody>
-  );
-}
-
 export function Game() {
-  const flightState = useRef(createFlightState()).current;
+  const flightState = useRef(createFlightState(activeArena.spawn)).current;
+
+  // Seed the respawn checkpoint from the loaded arena (Ticket 2.4) rather than
+  // relying on the GameState default coincidentally matching arena-01's spawn.
+  useEffect(() => {
+    useGameState.getState().setCheckpoint(activeArena.spawn);
+  }, []);
 
   // Dev controls: camera mode + physics debug + the Phase 0 bus smoke-test button.
   const { cameraMode, showPhysicsDebug } = useControls("Dev", {
@@ -87,8 +72,7 @@ export function Game() {
       />
 
       <Physics debug={showPhysicsDebug} gravity={[0, -9.81, 0]}>
-        <Floor />
-        <Bounds />
+        <ArenaLoader config={activeArena} />
         <Player flightState={flightState} settings={flightSettings} active={flightActive} />
 
         {/*
@@ -100,8 +84,6 @@ export function Game() {
         */}
         {cameraMode === "follow" && <FollowCamera state={flightState} />}
       </Physics>
-
-      <ArenaLoader />
 
       {cameraMode === "orbit" && (
         <OrbitControls makeDefault target={[0, 1, 0]} maxPolarAngle={Math.PI * 0.495} />

@@ -1,11 +1,49 @@
 export type Vec3 = [number, number, number];
 
+export interface RazorHazardConfig {
+  type: "razor";
+  pos: Vec3;
+  /** Blade rotations per minute — visual spin speed. */
+  rpm: number;
+  /** Whether this hazard is wired to the siren cover state (Phase 3). */
+  siren?: boolean;
+}
+
+export interface CrusherHazardConfig {
+  type: "crusher";
+  pos: Vec3;
+  /** Seconds per full idle→warning→crush→idle cycle. */
+  interval: number;
+}
+
+export interface LaserHazardConfig {
+  type: "laser";
+  pos: Vec3;
+  /** Horizontal axis the beam extends along. */
+  axis: "x" | "z";
+  /** Beam length in meters. */
+  length: number;
+  /** Seconds per full idle→charge→fire→idle cycle. */
+  interval: number;
+}
+
+export type HazardConfig = RazorHazardConfig | CrusherHazardConfig | LaserHazardConfig;
+
+/** Phase 3.2 — cover zone. Parsed now, rendered/used once cover states land. */
+export interface SmokeZoneConfig {
+  pos: Vec3;
+  radius: number;
+}
+
+/** Static arena bounds, centered at the world origin. */
+export interface ArenaBounds {
+  width: number;
+  height: number;
+  depth: number;
+}
+
 /**
  * Data-driven arena description. Loaded from JSON (see config/arenas/*.json).
- *
- * Only `spawn`/`exit`/`checkpoints` are consumed by the Phase 0 loader stub.
- * `hazards`, `smokeZones`, `enemies`, and `announcer.events` are reserved for
- * later phases and currently parsed but not spawned.
  */
 export interface ArenaConfig {
   id: string;
@@ -13,10 +51,10 @@ export interface ArenaConfig {
   spawn: Vec3;
   exit: Vec3;
   checkpoints: Vec3[];
-  /** Phase 2 — left empty for now. Shape intentionally loose until 2.x. */
-  hazards: unknown[];
-  /** Phase 2 — smoke/cover zones. */
-  smokeZones: unknown[];
+  bounds: ArenaBounds;
+  hazards: HazardConfig[];
+  /** Phase 3.2 — parsed but not yet rendered. */
+  smokeZones: SmokeZoneConfig[];
   /** Phase 4 — enemy spawn descriptors. */
   enemies: unknown[];
   announcer: {

@@ -17,6 +17,8 @@ export interface GameState {
   decaySuspicion: (n: number) => void; // clamp 0..100
   setCheckpoint: (p: [number, number, number]) => void;
   setStory: (s: StoryProgress) => void;
+  /** Elimination respawn (Ticket 2.4): full health, suspicion cleared. Checkpoint/story untouched. */
+  respawn: () => void;
   reset: () => void; // restore defaults
 }
 
@@ -55,6 +57,8 @@ export const useGameState = create<GameState>((set) => ({
   setCheckpoint: (p) => set({ checkpoint: p }),
 
   setStory: (s) => set({ storyProgress: s }),
+
+  respawn: () => set((s) => ({ health: s.maxHealth, suspicion: 0 })),
 
   reset: () => set({ ...DEFAULTS }),
 }));
