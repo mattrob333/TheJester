@@ -8,6 +8,7 @@ import type { FlightState } from "./flightState";
 import { telemetry } from "../../ui/telemetry";
 import { useGameState } from "../systems/gameState";
 import { bus } from "../systems/events";
+import { fireProjectile } from "../combat/useWeapon";
 
 /**
  * Jetpack flight controller (Ticket 1.1).
@@ -143,6 +144,8 @@ export function Player({ flightState, settings, active }: PlayerProps) {
   const desired = useMemo(() => new Vector3(), []);
   const currentVel = useMemo(() => new Vector3(), []);
   const zero = useMemo(() => new Vector3(), []);
+  const muzzle = useMemo(() => new Vector3(), []);
+  const up = useMemo(() => new Vector3(0, 1, 0), []);
 
   useFrame((_, dt) => {
     const body = bodyRef.current;
@@ -187,6 +190,11 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       forward.set(0, 0, -1).applyEuler(lookEuler);
       yawEuler.set(0, flightState.yaw, 0);
       right.set(1, 0, 0).applyEuler(yawEuler);
+
+      if (input.fire) {
+        muzzle.copy(flightState.position).addScaledVector(forward, 1.2).addScaledVector(up, 0.2);
+        fireProjectile(muzzle, forward, { covered: false });
+      }
 
       desired.set(0, 0, 0);
       if (fwdIn !== 0) desired.addScaledVector(forward, fwdIn);

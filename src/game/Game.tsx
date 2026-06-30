@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, FlyControls, Stats } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
-import { useControls, button, folder } from "leva";
-import { bus } from "./systems/events";
+import { useControls, folder } from "leva";
 import { useGameState } from "./systems/gameState";
 import { Player } from "./player/Player";
 import { createFlightState } from "./player/flightState";
@@ -11,6 +10,7 @@ import { FollowCamera } from "./camera/FollowCamera";
 import { ArenaLoader } from "./arena/ArenaLoader";
 import { activeArena } from "./config/activeArena";
 import { telemetry } from "../ui/telemetry";
+import { Projectiles } from "./combat/Projectile";
 
 /** Reports the live camera position into the telemetry bridge each frame. */
 function CameraReporter() {
@@ -30,7 +30,7 @@ export function Game() {
     useGameState.getState().setCheckpoint(activeArena.spawn);
   }, []);
 
-  // Dev controls: camera mode + physics debug + the Phase 0 bus smoke-test button.
+  // Dev controls: camera mode + physics debug.
   const { cameraMode, showPhysicsDebug } = useControls("Dev", {
     cameraMode: {
       value: "follow",
@@ -38,7 +38,6 @@ export function Game() {
       label: "camera mode",
     },
     showPhysicsDebug: { value: false, label: "physics debug" },
-    "Test: emit shotFired": button(() => bus.emit("shotFired", { covered: false })),
   });
 
   // Flight tuning — exposed live so feel can be dialed in without redeploying.
@@ -74,6 +73,7 @@ export function Game() {
       <Physics debug={showPhysicsDebug} gravity={[0, -9.81, 0]}>
         <ArenaLoader config={activeArena} />
         <Player flightState={flightState} settings={flightSettings} active={flightActive} />
+        <Projectiles />
 
         {/*
           "follow" = real gameplay camera, tracks the player. It must live

@@ -85,6 +85,7 @@ export function DebugOverlay() {
         <div style={styles.title}>controls (follow camera)</div>
         <div style={styles.dim}>click canvas to look · WASD move</div>
         <div style={styles.dim}>Space/Ctrl up/down · Shift boost</div>
+        <div style={styles.dim}>LMB to fire</div>
       </div>
 
       <div style={styles.section}>

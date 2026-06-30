@@ -11,6 +11,7 @@
     { "type": "laser", "pos": [28, 2, 0], "axis": "x", "length": 6, "interval": 3 }
   ],
   "smokeZones": [],
+  "dummies": [{ "pos": [34, 2, 0], "radius": 1.2 }],
   "enemies": [],
   "announcer": { "intro": "arena01_intro", "events": {} }
 }

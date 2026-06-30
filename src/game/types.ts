@@ -42,6 +42,12 @@ export interface ArenaBounds {
   depth: number;
 }
 
+/** Phase 3.1 — target dummy for proving projectiles/hit detection. */
+export interface TargetDummyConfig {
+  pos: Vec3;
+  radius: number;
+}
+
 /**
  * Data-driven arena description. Loaded from JSON (see config/arenas/*.json).
  */
@@ -55,6 +61,8 @@ export interface ArenaConfig {
   hazards: HazardConfig[];
   /** Phase 3.2 — parsed but not yet rendered. */
   smokeZones: SmokeZoneConfig[];
+  /** Phase 3.1 — target dummies for combat verification. */
+  dummies: TargetDummyConfig[];
   /** Phase 4 — enemy spawn descriptors. */
   enemies: unknown[];
   announcer: {

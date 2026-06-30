@@ -17,6 +17,8 @@ export interface FlightInputState {
   /** Accumulated pointer-lock mouse delta since last read; consumer resets to 0. */
   mouseDX: number;
   mouseDY: number;
+  /** Left mouse button is held (only updated while pointer lock is active). */
+  fire: boolean;
   locked: boolean;
 }
 
@@ -33,6 +35,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     keys: new Set(),
     mouseDX: 0,
     mouseDY: 0,
+    fire: false,
     locked: false,
   }).current;
 
@@ -51,16 +54,25 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
         state.mouseDY += e.movementY;
       }
     };
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 0 && state.locked) state.fire = true;
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 0) state.fire = false;
+    };
     const onClick = () => {
       domElement.requestPointerLock();
     };
     const onLockChange = () => {
       state.locked = document.pointerLockElement === domElement;
+      if (!state.locked) state.fire = false;
     };
 
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
     domElement.addEventListener("click", onClick);
     document.addEventListener("pointerlockchange", onLockChange);
 
@@ -68,9 +80,12 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
       domElement.removeEventListener("click", onClick);
       document.removeEventListener("pointerlockchange", onLockChange);
       state.keys.clear();
+      state.fire = false;
       if (document.pointerLockElement === domElement) {
         document.exitPointerLock();
       }
