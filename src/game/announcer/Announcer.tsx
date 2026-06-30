@@ -31,6 +31,16 @@ function emitBark(barkId: string | undefined) {
   bus.emit("announcerLine", { text });
 }
 
+/**
+ * Ticket 6.1 — generic bark trigger, exported for content/level systems
+ * (tutorial beacons, future scripted triggers) that need to play an
+ * announcer line without being the Announcer component itself. Resolves
+ * through the same story-tier-aware lookup as every other bark path.
+ */
+export function triggerBark(barkId: string) {
+  emitBark(barkId);
+}
+
 // Module-scoped so the side-effect import only registers listeners once,
 // matching the suspicion.ts/lockdown.ts pattern.
 let lowHpFired = false;

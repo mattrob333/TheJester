@@ -69,6 +69,20 @@ export interface SecurityDroneConfig {
 export type EnemyConfig = ArenaGuardConfig | SecurityDroneConfig;
 
 /**
+ * Ticket 6.1 — tutorial beacon. A one-shot sensor zone placed along the
+ * orientation arena's teaching path; entering it plays the given announcer
+ * bark id once (no pop-up text per the spec — everything is taught through
+ * the announcer + level layout). Generic and reusable: any arena can place
+ * these, not just arena-01.
+ */
+export interface TutorialBeaconConfig {
+  pos: Vec3;
+  /** Bark id resolved via lines.json (story-tier-aware), played once on entry. */
+  barkId: string;
+  radius: number;
+}
+
+/**
  * Data-driven arena description. Loaded from JSON (see config/arenas/*.json).
  */
 export interface ArenaConfig {
@@ -85,6 +99,8 @@ export interface ArenaConfig {
   dummies: TargetDummyConfig[];
   /** Phase 4 — enemy spawn descriptors. */
   enemies: EnemyConfig[];
+  /** Ticket 6.1 — one-shot announcer triggers along the teaching path. */
+  tutorialBeacons: TutorialBeaconConfig[];
   announcer: {
     intro: string;
     /** Map of event key -> announcer bark id. Phase 5. */
