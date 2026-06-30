@@ -9,6 +9,8 @@ import { telemetry } from "../../ui/telemetry";
 import { useGameState } from "../systems/gameState";
 import { bus } from "../systems/events";
 import { fireProjectile } from "../combat/useWeapon";
+import { findNearestTarget } from "../combat/targeting";
+import { lockOnState } from "../combat/lockOn";
 
 /**
  * Jetpack flight controller (Ticket 1.1).
@@ -31,6 +33,10 @@ const RADIUS = 0.5;
 const HALF_HEIGHT = 0.6; // cylinder half-height (excludes the two caps)
 
 const PITCH_LIMIT = MathUtils.degToRad(85);
+
+// Ticket 3.1b — soft lock-on search parameters.
+const LOCK_ON_MAX_RANGE = 50; // meters
+const LOCK_ON_CONE_ANGLE = MathUtils.degToRad(25); // half-angle
 
 function CapsuleVisual() {
   return (
@@ -191,9 +197,19 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       yawEuler.set(0, flightState.yaw, 0);
       right.set(1, 0, 0).applyEuler(yawEuler);
 
+      // Ticket 3.1b — soft lock-on: re-acquire the nearest valid target in
+      // front of the player every frame, regardless of fire state, so the
+      // lock-on indicator updates live even before the player shoots.
+      const lockedTarget = findNearestTarget(flightState.position, forward, {
+        maxRange: LOCK_ON_MAX_RANGE,
+        coneAngle: LOCK_ON_CONE_ANGLE,
+        excludeOwner: "player",
+      });
+      lockOnState.targetId = lockedTarget?.id ?? null;
+
       if (input.fire) {
         muzzle.copy(flightState.position).addScaledVector(forward, 1.2).addScaledVector(up, 0.2);
-        fireProjectile(muzzle, forward, { covered: false });
+        fireProjectile(muzzle, forward, { covered: false, targetId: lockOnState.targetId });
       }
 
       desired.set(0, 0, 0);

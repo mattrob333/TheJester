@@ -11,6 +11,7 @@ import { ArenaLoader } from "./arena/ArenaLoader";
 import { activeArena } from "./config/activeArena";
 import { telemetry } from "../ui/telemetry";
 import { Projectiles } from "./combat/Projectile";
+import { LockOnIndicator } from "./combat/LockOnIndicator";
 
 /** Reports the live camera position into the telemetry bridge each frame. */
 function CameraReporter() {
@@ -74,6 +75,7 @@ export function Game() {
         <ArenaLoader config={activeArena} />
         <Player flightState={flightState} settings={flightSettings} active={flightActive} />
         <Projectiles />
+        <LockOnIndicator />
 
         {/*
           "follow" = real gameplay camera, tracks the player. It must live

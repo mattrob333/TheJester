@@ -2,10 +2,12 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { InstancedMesh, Object3D, Vector3 } from "three";
 import { useWeapon } from "./useWeapon";
-import { TARGETS } from "./targets";
+import { TARGETS, getTarget } from "./targets";
 
 const PROJECTILE_RADIUS = 0.12;
 const MAX_INSTANCES = 64;
+/** Ticket 3.1b — homing turn rate, radians/sec. Finite (not instant) so homing reads as assisted aim, not a hitscan. */
+const HOMING_TURN_RATE = Math.PI * 3; // ~540°/s
 
 /**
  * Renders and updates all active projectiles.
@@ -20,6 +22,7 @@ export function Projectiles() {
   const weapon = useWeapon();
   const scratch = useMemo(() => new Vector3(), []);
   const dummy = useMemo(() => new Object3D(), []);
+  const toTarget = useMemo(() => new Vector3(), []);
 
   useFrame((_, dt) => {
     const list = weapon.projectiles;
@@ -28,6 +31,23 @@ export function Projectiles() {
     for (let i = list.length - 1; i >= 0; i--) {
       const p = list[i];
       p.lifetime += dt;
+
+      // Ticket 3.1b — homing: steer direction toward the locked target at a
+      // finite turn rate, then advance along the (possibly re-aimed)
+      // direction. Falls back to straight flight if the target despawned.
+      if (p.targetId) {
+        const target = getTarget(p.targetId);
+        if (target) {
+          toTarget.copy(target.position).sub(p.position).normalize();
+          const maxTurn = HOMING_TURN_RATE * dt;
+          const angle = p.direction.angleTo(toTarget);
+          if (angle > 1e-4) {
+            const t = Math.min(1, maxTurn / angle);
+            p.direction.lerp(toTarget, t).normalize();
+          }
+        }
+      }
+
       p.position.addScaledVector(p.direction, p.speed * dt);
 
       scratch.copy(p.position).sub(p.origin);

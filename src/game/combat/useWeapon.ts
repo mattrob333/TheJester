@@ -14,6 +14,8 @@ export interface ProjectileDescriptor {
   maxRange: number;
   owner: ProjectileOwner;
   covered: boolean;
+  /** Ticket 3.1b — soft lock-on target id. When set, the projectile homes toward this target each frame instead of flying straight. */
+  targetId: string | null;
 }
 
 const FIRE_COOLDOWN = 0.25; // seconds
@@ -41,7 +43,7 @@ export function useWeapon() {
 export function fireProjectile(
   origin: Vector3,
   direction: Vector3,
-  options: { covered?: boolean; owner?: ProjectileOwner } = {},
+  options: { covered?: boolean; owner?: ProjectileOwner; targetId?: string | null } = {},
 ): boolean {
   const now = performance.now() / 1000;
   if (now - state.lastFire < FIRE_COOLDOWN) return false;
@@ -62,6 +64,7 @@ export function fireProjectile(
     maxRange: MAX_RANGE,
     owner: options.owner ?? "player",
     covered,
+    targetId: options.targetId ?? null,
   });
 
   return true;

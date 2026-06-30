@@ -27,3 +27,8 @@ export function unregisterTarget(target: Targetable) {
   const index = TARGETS.indexOf(target);
   if (index >= 0) TARGETS.splice(index, 1);
 }
+
+/** Look up a registered target by id (used by homing projectiles + the lock-on indicator). */
+export function getTarget(id: string): Targetable | undefined {
+  return TARGETS.find((t) => t.id === id);
+}
