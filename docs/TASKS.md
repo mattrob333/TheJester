@@ -10,12 +10,12 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Wire `bus.emit("shotFired", { covered: false })` on each fire
   - [x] Add target dummy to `arena-01.json` (sensor + color-flash feedback)
   - [x] Verify: click fire spawns projectile, dummy flashes/logs on hit
-- [ ] **3.1b** Aiming / soft lock-on
-  - [ ] Add target registry for lockable objects
-  - [ ] Compute nearest valid target in forward cone + max range
-  - [ ] Render lock-on indicator
-  - [ ] Make projectile home toward locked target
-  - [ ] Verify: firing reliably hits marked target
+- [x] **3.1b** Aiming / soft lock-on
+  - [x] Add target registry for lockable objects
+  - [x] Compute nearest valid target in forward cone + max range
+  - [x] Render lock-on indicator
+  - [x] Make projectile home toward locked target
+  - [x] Verify: firing reliably hits marked target
 - [ ] **3.2** Cover states (siren + smoke)
   - [ ] Create/update cover state module (`coverState.ts` or extend `gameState.ts`)
   - [ ] Render `smokeZones` from arena config (`SmokeZone.tsx`)
