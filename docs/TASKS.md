@@ -39,7 +39,7 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 
 ## Phase 4 — Enemies (current)
 - [x] **4.1** Arena Guard
-- [ ] **4.2** Security Drone
+- [x] **4.2** Security Drone
 
 ## Phase 5 — AI Announcer
 - [ ] **5.1** Bark system
