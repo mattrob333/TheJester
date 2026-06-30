@@ -22,7 +22,7 @@ Future developers (and future you) depend on this staying accurate.
 | 0 — Scaffold | 0.1, 0.3, 0.4 | ✅ Done |
 | 1 — Movement core | 1.1, 1.2, 1.3 | ✅ Done |
 | 2 — Arena, hazards, survival | 2.1, 2.2, 2.3, 2.4 | ✅ Done |
-| 3 — Combat + Suspicion | 3.1, 3.1b, 3.2, 3.3, 3.4 | ⬜ Not started — **build next** |
+| 3 — Combat + Suspicion | 3.1, 3.1b, 3.2, 3.3, 3.4 | 3.1 ✅ / 3.1b in progress |
 | 4 — Enemies | 4.1, 4.2 | ⬜ Not started |
 | 5 — AI Announcer | 5.1, 5.2, 5.3 | ⬜ Not started |
 | 6 — Tutorial → vertical slice | 6.1 | ⬜ Not started |
@@ -179,6 +179,14 @@ work via keyboard, or you accept that opening them requires Esc first.
   suite right now.
 
 ## Changelog (most recent first)
+
+- **Phase 3.1** (`c60c3d0`) — Firing + projectiles. Left mouse button tracked
+  under pointer lock, `useWeapon` cooldown + active projectile list,
+  `Projectile.tsx` forward-march with lifetime/range culling and radius hit
+  detection against the `TARGETS` registry. Added `TargetDummy` to
+  `arena-01.json` (at `[34,2,0]`) with red hit-flash feedback. Removed the
+  leva "Test: emit shotFired" scaffolding button. Verified: `npm run build`
+  green; projectiles spawn from the player muzzle and check hits each frame.
 
 - **Phase 2** (`efc52ef`) — Data-driven arena loader (`ArenaLoader.tsx`,
   `Floor.tsx`, `Bounds.tsx` now take `config.bounds`), three telegraphed

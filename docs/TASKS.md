@@ -3,13 +3,13 @@
 Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md`](../DEVELOPMENT_LOG.md).
 
 ## Phase 3 — Combat + Suspicion (current)
-- [ ] **3.1** Firing + projectiles
-  - [ ] Extend `useFlightInput.ts` with left-mouse fire tracking
-  - [ ] Create `src/game/combat/useWeapon.ts` (cooldown + active projectiles ref)
-  - [ ] Create `src/game/combat/Projectile.tsx` (forward-march, lifetime/range, hit detection)
-  - [ ] Wire `bus.emit("shotFired", { covered: false })` on each fire
-  - [ ] Add target dummy to `arena-01.json` (sensor + color-flash feedback)
-  - [ ] Verify: click fire spawns projectile, dummy flashes/logs on hit
+- [x] **3.1** Firing + projectiles
+  - [x] Extend `useFlightInput.ts` with left-mouse fire tracking
+  - [x] Create `src/game/combat/useWeapon.ts` (cooldown + active projectiles ref)
+  - [x] Create `src/game/combat/Projectile.tsx` (forward-march, lifetime/range, hit detection)
+  - [x] Wire `bus.emit("shotFired", { covered: false })` on each fire
+  - [x] Add target dummy to `arena-01.json` (sensor + color-flash feedback)
+  - [x] Verify: click fire spawns projectile, dummy flashes/logs on hit
 - [ ] **3.1b** Aiming / soft lock-on
   - [ ] Add target registry for lockable objects
   - [ ] Compute nearest valid target in forward cone + max range
