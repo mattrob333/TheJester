@@ -37,11 +37,11 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Stub elite-guard spawn hook for Phase 4
   - [x] Verify: unsafe spam reliably triggers observable response
 
-## Phase 4 — Enemies (current)
+## Phase 4 — Enemies (complete)
 - [x] **4.1** Arena Guard
 - [x] **4.2** Security Drone
 
-## Phase 5 — AI Announcer
+## Phase 5 — AI Announcer (current)
 - [ ] **5.1** Bark system
 - [ ] **5.2** Character arc flag
 - [ ] **5.3** Voice / captions
@@ -61,3 +61,4 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] Phase 1 movement core
 - [x] Phase 2 arena, hazards, survival
 - [x] Phase 3 combat + suspicion (firing, lock-on, cover, suspicion model, lockdown response)
+- [x] Phase 4 enemies (Arena Guard, Security Drone)
