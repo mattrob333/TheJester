@@ -4,7 +4,7 @@
 **Repo:** https://github.com/mattrob333/TheJester
 **Workspace:** `C:\Users\mrobe\TheJester`
 **Branch:** `thejester-autopilot`
-**Status:** Phase 6 in progress — Ticket 6.1 all 8 teaching beats shipped (content composition complete), interactive play-test of the done-when loop still pending
+**Status:** STOPPED — Ticket 6.1 content composition complete (all 8 teaching beats shipped, build green); blocked on human/interactive play-test of the Phase 6 done-when loop, which the inner loop has no tooling to perform. Phase 7 is explicitly spec-gated on that play-test happening first ("if the loop above is fun... don't push forward into Phase 7 on a loop that doesn't feel good yet"). Resuming requires a user/supervisor decision: either (a) play-test the build and report back / fix any feel issues found, or (b) explicitly waive the play-test and authorize starting Phase 7 on code-review confidence alone.
 
 ## Architecture: Two-Tier Build Loop
 - Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
