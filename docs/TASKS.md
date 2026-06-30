@@ -16,13 +16,13 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Render lock-on indicator
   - [x] Make projectile home toward locked target
   - [x] Verify: firing reliably hits marked target
-- [ ] **3.2** Cover states (siren + smoke)
-  - [ ] Create/update cover state module (`coverState.ts` or extend `gameState.ts`)
-  - [ ] Render `smokeZones` from arena config (`SmokeZone.tsx`)
-  - [ ] Implement siren active boolean tied to razor `siren: true`
-  - [ ] Emit `sirenActive` / `smokeActive` events on transitions
-  - [ ] Add cover readout to `DebugOverlay.tsx`
-  - [ ] Verify: overlay shows cover on/off correctly
+- [x] **3.2** Cover states (siren + smoke)
+  - [x] Create/update cover state module (`coverState.ts` or extend `gameState.ts`)
+  - [x] Render `smokeZones` from arena config (`SmokeZone.tsx`)
+  - [x] Implement siren active boolean tied to razor `siren: true`
+  - [x] Emit `sirenActive` / `smokeActive` events on transitions
+  - [x] Add cover readout to `DebugOverlay.tsx`
+  - [x] Verify: overlay shows cover on/off correctly
 - [ ] **3.3** Suspicion system
   - [ ] Create `src/game/systems/suspicion.ts` with the spec'd model
   - [ ] Cover factor math: open ×1.0, siren ×0.1, smoke ×0.15, siren+smoke ×0.0–0.05
