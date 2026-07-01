@@ -3,12 +3,13 @@
 **Spec source:** [`DEVELOPMENT_LOG.md`](../DEVELOPMENT_LOG.md)
 **Repo:** https://github.com/mattrob333/TheJester
 **Workspace:** `C:\Users\mrobe\TheJester`
-**Branch:** `thejester-autopilot`
-**Status:** STOPPED — Ticket 6.1 content composition complete (all 8 teaching beats shipped, build green); blocked on human/interactive play-test of the Phase 6 done-when loop, which the inner loop has no tooling to perform. Phase 7 is explicitly spec-gated on that play-test happening first ("if the loop above is fun... don't push forward into Phase 7 on a loop that doesn't feel good yet"). Resuming requires a user/supervisor decision: either (a) play-test the build and report back / fix any feel issues found, or (b) explicitly waive the play-test and authorize starting Phase 7 on code-review confidence alone.
+**Branch:** `main` (thejester-autopilot merged into main 2026-06-30; main is now GitHub's default branch and remote HEAD)
+**Status:** Phase 6 content-complete + input-robustness fix landed. Play-test blocker partially addressed (see below) — still open on the full qualitative done-when loop.
 
 ## Architecture: Two-Tier Build Loop
 - Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
 - Outer Loop (cron `edd7a15537da`) — every 30m: active supervisor (audits + writes corrections + trivial fixes + escalation).
+- **Both crons now target branch `main`, not `thejester-autopilot`** (updated 2026-06-30 after Matt manually merged + fixed input handling with another AI session).
 
 ## Phases / Waves
 1. [x] Phase 0 — Scaffold (tickets 0.1, 0.3, 0.4)
@@ -61,28 +62,37 @@
 
 - **Ticket 6.1 sub-slices 6+7 — Tutorial beacons: suspicion + exit beats** (92aa73f): added `TutorialBeacon` at `[22, 2, 0]` (`tut_suspicion`, just past the checkpoint at x=20, ahead of the Security Drone at x=24/laser at x=28) reinforcing the general suspicion-meter mechanic (spam-surcharge + decay, from 3.3), and `TutorialBeacon` at `[36, 2, 0]` (`tut_exit`, just past the target dummy at x=34, before the exit at x=40) calling out the finish line. Both believer-tier only. Pure content composition: zero new engine code. **This completes all 8 teaching beats of Ticket 6.1** (movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit) — the full arena-01.json now contains every beacon, both enemy types, all 3 hazard types, the smoke zone, 2 checkpoints, the dummy, and the exit, matching the DEVELOPMENT_LOG.md 6.1 spec's content list. Verified via `npm run build` (zero TS errors) after each sub-slice. **Not yet done:** an actual interactive play-test of the full done-when loop (DEVELOPMENT_LOG.md lines 615-623) — this inner-loop session has no browser-automation/play-test tooling available, so beat timing, pacing, and the "is this fun" qualitative check (explicitly called out in the spec as more important than "the code compiles") have not been exercised. Flagging this as the next action rather than declaring Phase 6 done.
 
+- **Manual fix (Matt + separate AI session, outside the cron loop) — input robustness for embedded/in-app browsers** (`7d9467f`, merged to `main` via `24c41c5`): the inner loop's stated blocker was that it had no browser/play-test tooling to verify the Phase 6 done-when loop. Matt picked this up manually and found (and fixed) a real bug blocking exactly that kind of testing: pointer lock silently fails in embedded/in-app browser webviews, which previously left the game unplayable there (no mouse-look, no fire). Fix: `useFlightInput.ts` now falls back to plain cursor-position tracking over the canvas when `requestPointerLock()` is denied/unavailable (`cursorLook` flag added to `FlightInputState`), so mouse-look works either way. `fire` changed from a held-button live state to a **queued one-shot-per-click** flag (`input.fire = false` reset immediately after `Player.tsx` consumes it in the per-frame fire check) — previously fire only worked while pointer-locked, since RMB is now reserved as a "focus mouse-look without firing" input, distinct from LMB. `Player.tsx` also gained `OptionalPlayerModel` — HEAD-checks `PLAYER_MODEL_URL` before attempting the `Suspense`/`ModelBoundary` GLB load path, falling back straight to `CapsuleVisual` when `/models/player.glb` doesn't exist, instead of throwing a runtime error caught only by the boundary. README updated to describe the current Phase 3-6 feature set (was still describing the Phase 0-2 no-combat scaffold) and documents LMB/RMB. **Verified by Matt directly** (not the inner loop): `npm run build` green, dev server live, browser test showed pointer lock staying `false` in that embedded browser while mouse-look/movement/fire all worked via the fallback path (two clicks → two `shotFired` events). **This does not by itself satisfy the Phase 6 done-when** (full hazard/enemy/checkpoint/exit/announcer loop) — it fixes a *precondition* for reliably play-testing that loop in more environments, including phone/embedded browsers. The qualitative "is this fun, does the tutorial pacing work" verification is still open.
+
 ## Open Issues / Blockers
 - **Narrative-beat decision needed (flagged, not invented, per spec instruction in DEVELOPMENT_LOG.md 5.2):** which gameplay events should advance `storyProgress` forward (believer → doubter → ally) is an explicit product/narrative decision the spec says not to guess. `setStory(...)` exists and is wired end-to-end (announcer correctly swaps line sets per tier, verified 5.2), but nothing currently calls it during gameplay — it's only reachable via manual/dev invocation (e.g. console). This does not block Phase 6 (tutorial only needs the believer-tier default) but will need a decision before any late-game arena is meant to demonstrate the ally-tier lines for real. Raised as a course-correction in `.hermes/course-corrections.md` for supervisor/user visibility.
 
 ## Next Action
-All 8 teaching beats of Ticket 6.1 are now content-complete in `arena-01.json`
-(movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit).
-The remaining work to close Phase 6 is the **done-when verification itself**:
-an actual interactive play-test of the full loop described in
-`DEVELOPMENT_LOG.md` lines ~615-623 (fly/dodge ≥2 hazard types, encounter both
-Arena Guard + Security Drone, fire only safely with suspicion behaving as
-spec'd, take damage with visible suit wear, respawn at a checkpoint, reach the
-exit, announcer reacting throughout) — this requires either a human play
-session or browser-automation tooling neither of which this inner-loop tick
-has access to. Until that verification happens (or the user/supervisor
-explicitly waives it and declares the milestone met on code-review alone),
-treat Ticket 6.1's final checkbox as open. If a future tick gains
-browser/computer-use tooling, that is the natural next action; otherwise this
-is a flag for the user/outer-loop supervisor rather than further inner-loop
-code work — there is no more "next vertical slice" of code to write for 6.1
-without inventing untested content. Do not start Phase 7 (explicitly gated on
-"the loop has been played and feels good — not just the code compiles") until
-this verification is resolved one way or another.
+All 8 teaching beats of Ticket 6.1 are content-complete in `arena-01.json`
+(movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit),
+and the input-robustness fix (`7d9467f`) removes the pointer-lock dependency that
+was blocking play-testing in embedded/in-app browsers. **Still open:** the full
+interactive play-test of the Phase 6 done-when loop as spec'd in
+`DEVELOPMENT_LOG.md` lines ~615-623 — fly/dodge ≥2 hazard types, encounter both
+Arena Guard + Security Drone, fire only safely with suspicion behaving as spec'd,
+take damage with visible suit wear, respawn at a checkpoint, reach the exit,
+announcer reacting throughout, AND the qualitative "is this fun" pacing check.
+Matt's manual verification so far only confirmed input mechanics (mouse-look,
+movement, 2 fire events) work without pointer lock — it did not exercise the
+full teaching-beat sequence or combat/suspicion loop end-to-end.
+**Resuming inner-loop work on this branch (`main`) should:**
+1. Re-verify `npm run build` green on `main` (done — confirmed 2026-06-30).
+2. If browser-automation/computer-use tooling is available to a future tick,
+   attempt an automated play-through of arena-01 exercising the beats above and
+   report pass/fail per beat.
+3. If no such tooling, continue treating full done-when verification as a
+   human/supervisor action — do NOT start Phase 7 on code-review confidence
+   alone unless explicitly authorized by Matt (Phase 7 is spec-gated on "the
+   loop has been played and feels good — not just the code compiles").
+4. In the meantime, safe forward work that doesn't require Phase 6 sign-off:
+   polish/cleanup of the input-fallback code path itself (tests, edge cases),
+   and any Phase 7 prep that's pure scaffolding (e.g. new arena config schema
+   groundwork) — but do not build actual Phase 7 content/tickets yet.
 
 ## Pitfalls / Notes for Future Ticks
 - `npm run build` must pass with zero TS errors (strict mode).
@@ -99,4 +109,4 @@ this verification is resolved one way or another.
 
 - **Ticket 4.2 notes:** `SecurityDrone.tsx` subscribes to `bus.on("shotFired", ...)` directly (not through `suspicion.ts`) to add its own stacking suspicion bump — this is intentional per spec ("a second source ... stacking, not replacing"). The two listeners (this one + `suspicion.ts`'s) both fire on the same event independently; there's no shared "total suspicion this shot" computation, each just calls `addSuspicion` with its own amount and the store sums them. If a future ticket wants to scale the drone's bump by distance/exposure (e.g. closer = more suspicious) that's a clean follow-up — currently it's a flat 8 points whenever the player fires uncovered within sight range, with no falloff. Drone is fully stationary (hover-in-place) — no movement/patrol was specified for it, unlike the Arena Guard's patrol; if a future ticket wants drone movement, it's not blocking 4.2's done-when (drones fire at the player + firing unsafely within sight-line measurably increases suspicion beyond 3.3 alone — both implemented and build-verified).
 
-**Last Updated:** 2026-06-30 — Ticket 6.1 all 8 teaching beats shipped (sub-slices 4-7: sirens e96432d, smoke 0431bb2, suspicion+exit 92aa73f). Content composition for Phase 6 is complete; interactive play-test verification of the done-when loop is the next action, flagged for supervisor/user since the inner loop has no play-test tooling.
+**Last Updated:** 2026-06-30 — Repo consolidated onto `main` (merge `24c41c5` of `thejester-autopilot` + Matt's manual input-robustness fix `7d9467f`). `main` is now GitHub's default branch and remote HEAD; both cron jobs repointed to build against `main`. `npm install` + `npm run build` re-verified green (166 modules, zero TS errors). Ticket 6.1 remains content-complete but play-test-pending on the full done-when loop — the embedded-browser pointer-lock blocker that previously limited testing environments is now fixed.

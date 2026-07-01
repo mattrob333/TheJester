@@ -57,7 +57,14 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Beat 6: smoke (beacon at x=16.5, `tut_smoke`)
   - [x] Beat 7: suspicion (beacon at x=22, `tut_suspicion`)
   - [x] Beat 8: exit (beacon at x=36, `tut_exit`)
-  - [ ] Verify: full done-when loop in one session (DEVELOPMENT_LOG.md lines ~615-623) — content composition complete (all 8 beats, both enemies, checkpoint/respawn, exit all present in arena-01.json); a real interactive play-test pass has not yet been exercised by the inner loop (no browser-automation tooling available this session) — flag for next supervisor/outer-loop audit or a manual session.
+  - [ ] Verify: full done-when loop in one session (DEVELOPMENT_LOG.md lines ~615-623) — content composition complete (all 8 beats, both enemies, checkpoint/respawn, exit all present in arena-01.json). **Update 2026-06-30:** Matt + a separate AI session fixed a real input bug (pointer lock failing silently in embedded/in-app browsers, blocking mouse-look/fire there) — mouse-look now falls back to cursor tracking, fire is a queued one-shot-per-click, RMB added as focus-look-without-firing. Verified manually: movement/mouse-look/fire (2 clicks → 2 `shotFired`) all work without pointer lock. This removes a real blocker to testing in more environments but does **not** itself satisfy the full done-when (hazard/enemy/checkpoint/exit/announcer loop + "is this fun" pacing check) — still pending.
+
+## Repo Consolidation (2026-06-30)
+- [x] Merged `thejester-autopilot` → `main` (commit `24c41c5`)
+- [x] `main` set as GitHub default branch / remote HEAD
+- [x] Input-robustness fix landed on `main` (`7d9467f`): pointer-lock fallback, one-shot queued fire, RMB focus-look, optional-GLB HEAD-check fix, README updated
+- [x] Both cron jobs (builder `f5e4b0dae651`, supervisor `edd7a15537da`) repointed to build against `main`
+- [x] `npm install` + `npm run build` re-verified green on `main`
 
 ## Phase 7+
 - [ ] Content multiplication (enemies, arenas, pickups, difficulty)
