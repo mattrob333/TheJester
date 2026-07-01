@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { Vector3, type Mesh, type MeshStandardMaterial } from "three";
 import type { SecurityDroneConfig } from "../types";
-import { bus } from "../systems/events";
+import { bus, type GameEvents } from "../systems/events";
 import { useGameState } from "../systems/gameState";
 import { coverState } from "../systems/coverState";
 import { registerTarget, unregisterTarget, type Targetable } from "../combat/targets";
@@ -72,8 +72,9 @@ export function SecurityDrone({ config }: { config: SecurityDroneConfig }) {
 
   // Ticket 4.2 — spot the player firing unsafely within sight range.
   useEffect(() => {
-    const handler = ({ covered }: { covered: boolean }) => {
+    const handler = ({ covered, owner }: GameEvents["shotFired"]) => {
       if (dead.current) return;
+      if (owner !== "player") return;
       if (covered) return;
       const distToPlayer = toPlayer.copy(playerTracking.position).sub(position).length();
       if (distToPlayer > config.sightRange) return;

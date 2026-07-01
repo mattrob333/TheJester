@@ -38,7 +38,7 @@ export function useWeapon() {
 
 /**
  * Attempt to fire a projectile. Returns true if a shot was spawned (i.e. the
- * cooldown had elapsed). Emits `shotFired` for the suspicion system.
+ * cooldown had elapsed). Emits `shotFired` for gameplay observers.
  */
 export function fireProjectile(
   origin: Vector3,
@@ -51,7 +51,8 @@ export function fireProjectile(
   state.lastFire = now;
 
   const covered = options.covered ?? false;
-  bus.emit("shotFired", { covered });
+  const owner = options.owner ?? "player";
+  bus.emit("shotFired", { covered, owner });
 
   state.projectiles.push({
     id: `${now.toFixed(6)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -62,7 +63,7 @@ export function fireProjectile(
     maxLifetime: MAX_LIFETIME,
     origin: origin.clone(),
     maxRange: MAX_RANGE,
-    owner: options.owner ?? "player",
+    owner,
     covered,
     targetId: options.targetId ?? null,
   });

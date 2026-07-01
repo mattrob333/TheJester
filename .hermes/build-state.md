@@ -4,7 +4,7 @@
 **Repo:** https://github.com/mattrob333/TheJester
 **Workspace:** `C:\Users\mrobe\TheJester`
 **Branch:** `main` (thejester-autopilot merged into main 2026-06-30; main is now GitHub's default branch and remote HEAD)
-**Status:** STOPPED — Phase 6 (ticket 6.1) content-complete, play-test-blocked; all safe non-Phase-7 forward work exhausted; no browser/computer-use tooling available to this session to run the done-when play-test. Both crons paused.
+**Status:** CONSOLIDATED — Phase 6 (ticket 6.1) content-complete, partially browser-smoke-tested, and cleaned up after recent pushes. Full one-session Phase 6 acceptance/play-feel pass is still the next gate before Phase 7 content work unless Matt explicitly authorizes moving ahead with known tuning debt.
 
 ## Architecture: Two-Tier Build Loop
 - Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
@@ -28,7 +28,7 @@
    - 5.1 ✅ (a0ab585)
    - 5.2 ✅ (0ca0c9a)
    - 5.3 ✅ (satisfied by 5.1's caption work — see notes below, no separate commit)
-6. [ ] Phase 6 — Tutorial → vertical slice (ticket 6.1, content composition complete — all 8 teaching beats shipped, play-test verification pending)
+6. [ ] Phase 6 — Tutorial → vertical slice (ticket 6.1, content composition complete — all 8 teaching beats shipped, browser smoke test passed, full one-session play-feel verification pending)
 7. [ ] Phase 7+ — Content, bosses, narrative, polish
 
 ## Completed Tasks
@@ -152,3 +152,18 @@ full teaching-beat sequence or combat/suspicion loop end-to-end.
 4. To resume the automated loop: `cronjob action=resume job_id="f5e4b0dae651"` and `cronjob action=resume job_id="edd7a15537da"`.
 
 **Last Updated:** 2026-07-01 (third pass) — Inner loop STOPPED per protocol: build green, no actionable corrections, no unblocked safe work remains, Phase 6 play-test blocker persists with no tooling available. Both crons paused (`f5e4b0dae651`, `edd7a15537da`). Awaiting human play-test or authorization to proceed.
+
+## Manual Consolidation Pass (2026-07-01)
+- Fetched `origin/main`; no remote changes beyond `f081700` before this pass.
+- Found the original localhost `5173` smoke test was hitting an unrelated Snowbound Vite server. Restarted The Jester on a clean strict port (`6200`) and verified the served app title/HUD matched this repo.
+- Live browser smoke test confirmed initial render, HUD/debug overlay, checkpoint event, announcer intro/tutorial bark, and LMB firing.
+- Fixed two gameplay/event-contract bugs found during the live pass:
+  1. `shotFired` now includes `owner` so enemy shots do not drive player suspicion or drone "spotted firing" logic.
+  2. Player fire now reports live cover via `isCovered()`, and the input fallback no longer queues an extra fire request from both `mousedown` and `click`.
+- Verification: `npm run typecheck` green; `npm run build` green; live browser event log shows `shotFired {"covered":true,"owner":"player"}` while siren cover is active; no runtime errors observed.
+- Remaining non-blocking warnings: Three Clock/ShadowMap deprecations, one Vite initialization deprecation warning, and the expected large single bundle warning.
+
+## Next Build Queue
+1. Complete a structured Phase 6 acceptance pass in `arena-01`: all 8 tutorial beacons, two hazard types minimum, Arena Guard, Security Drone, safe vs open fire suspicion behavior, warning/detected thresholds, damage feedback, checkpoint respawn, exit reach, and announcer responsiveness.
+2. If the pass exposes feel issues, tune before expanding: movement acceleration/top speed, hazard spacing/timing, enemy damage/ranges, suspicion thresholds/decay, beacon placement, and bark timing.
+3. After Phase 6 is accepted, start Phase 7 content multiplication in this order: remaining enemy archetypes, arena config expansion, pickups/medical stations, then boss/narrative wrappers.

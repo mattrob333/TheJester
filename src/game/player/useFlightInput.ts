@@ -87,7 +87,6 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     const onClick = (e: MouseEvent) => {
       if (!isGameplayMouseEvent(e)) return;
       state.cursorLook = true;
-      if (e.button === 0) state.fire = true;
       try {
         const maybeLock = domElement.requestPointerLock() as Promise<void> | void;
         if (maybeLock) maybeLock.catch(() => (state.cursorLook = true));

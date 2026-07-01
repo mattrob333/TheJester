@@ -8,6 +8,7 @@ import type { FlightState } from "./flightState";
 import { telemetry } from "../../ui/telemetry";
 import { useGameState } from "../systems/gameState";
 import { bus } from "../systems/events";
+import { isCovered } from "../systems/coverState";
 import { fireProjectile } from "../combat/useWeapon";
 import { findNearestTarget } from "../combat/targeting";
 import { lockOnState } from "../combat/lockOn";
@@ -242,7 +243,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
 
       if (input.fire) {
         muzzle.copy(flightState.position).addScaledVector(forward, 1.2).addScaledVector(up, 0.2);
-        fireProjectile(muzzle, forward, { covered: false, targetId: lockOnState.targetId });
+        fireProjectile(muzzle, forward, { covered: isCovered(), targetId: lockOnState.targetId });
         input.fire = false;
       }
 

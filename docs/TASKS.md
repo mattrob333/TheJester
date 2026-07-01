@@ -7,7 +7,7 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Extend `useFlightInput.ts` with left-mouse fire tracking
   - [x] Create `src/game/combat/useWeapon.ts` (cooldown + active projectiles ref)
   - [x] Create `src/game/combat/Projectile.tsx` (forward-march, lifetime/range, hit detection)
-  - [x] Wire `bus.emit("shotFired", { covered: false })` on each fire
+  - [x] Wire `bus.emit("shotFired", { covered, owner })` on each accepted shot
   - [x] Add target dummy to `arena-01.json` (sensor + color-flash feedback)
   - [x] Verify: click fire spawns projectile, dummy flashes/logs on hit
 - [x] **3.1b** Aiming / soft lock-on
@@ -58,6 +58,8 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Beat 7: suspicion (beacon at x=22, `tut_suspicion`)
   - [x] Beat 8: exit (beacon at x=36, `tut_exit`)
   - [ ] Verify: full done-when loop in one session (DEVELOPMENT_LOG.md lines ~615-623) — content composition complete (all 8 beats, both enemies, checkpoint/respawn, exit all present in arena-01.json). **Update 2026-06-30:** Matt + a separate AI session fixed a real input bug (pointer lock failing silently in embedded/in-app browsers, blocking mouse-look/fire there) — mouse-look now falls back to cursor tracking, fire is a queued one-shot-per-click, RMB added as focus-look-without-firing. Verified manually: movement/mouse-look/fire (2 clicks → 2 `shotFired`) all work without pointer lock. This removes a real blocker to testing in more environments but does **not** itself satisfy the full done-when (hazard/enemy/checkpoint/exit/announcer loop + "is this fun" pacing check) — still pending.
+  - [x] Cleanup 2026-07-01: `shotFired` now carries `owner`, suspicion/drone spotting ignore enemy fire, player shots report live siren/smoke cover, and LMB no longer queues an extra shot from both `mousedown` and `click`.
+  - [ ] Next: structured Phase 6 play-test pass on `arena-01` with pass/fail notes per beat, plus tuning fixes for flight feel, hazard spacing, enemy pressure, suspicion pacing, and announcer timing.
 
 ## Repo Consolidation (2026-06-30)
 - [x] Merged `thejester-autopilot` → `main` (commit `24c41c5`)
@@ -67,6 +69,7 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] `npm install` + `npm run build` re-verified green on `main`
 
 ## Phase 7+
+- [ ] Start only after Phase 6 loop has been play-tested and accepted, or Matt explicitly authorizes moving on with known tuning debt.
 - [ ] Content multiplication (enemies, arenas, pickups, difficulty)
 - [ ] Bosses
 - [ ] Narrative wrappers

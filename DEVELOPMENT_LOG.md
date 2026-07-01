@@ -15,6 +15,37 @@ Future developers (and future you) depend on this staying accurate.
 
 # PART 1 — Development Log (what exists today)
 
+## Consolidation update - 2026-07-01
+
+Current branch: `main` at GitHub remote HEAD. Phases 0-5 are implemented, and
+Phase 6.1 has all eight orientation teaching beats composed in `arena-01.json`.
+The latest cleanup pass performed a browser-backed smoke test on a clean dev
+server port, then fixed the fire/suspicion event contract:
+
+- `shotFired` now includes `owner: "player" | "enemy"` so enemy projectiles do
+  not accidentally drive player suspicion or drone "spotted firing" logic.
+- Player shots now pass the live siren/smoke cover state into `fireProjectile`
+  instead of hard-coding `covered: false`.
+- The input fallback no longer queues fire from both `mousedown` and `click`;
+  LMB fire is queued on `mousedown`, while `click` only handles pointer-lock /
+  cursor-look focus.
+
+Verified this pass: `npm run typecheck`, `npm run build`, and live browser
+render at `http://127.0.0.1:6200` with the HUD/event log showing owned,
+covered player shots and no runtime errors. Remaining warnings are framework /
+Three deprecations plus the expected large R3F/Three bundle warning.
+
+Next build queue:
+
+1. Finish Phase 6 acceptance: play through `arena-01` in one session and record
+   pass/fail for all tutorial beats, both enemy types, siren/smoke cover,
+   suspicion thresholds, damage/respawn, checkpoint, exit, and announcer timing.
+2. Tune before expanding: if the loop feels rough, adjust flight feel, hazard
+   spacing, enemy pressure, suspicion numbers, beacon placement, and bark timing
+   before adding new content.
+3. Begin Phase 7 only after the Phase 6 loop is accepted, or after Matt
+   explicitly authorizes moving forward with known tuning debt.
+
 ## Status at a glance
 
 | Phase | Tickets | Status |

@@ -29,9 +29,8 @@ const FACTOR_OUT_OF_VIEW = 0.1;
  * `outOfView` corresponds to the `covered` flag already threaded through
  * `shotFired`/`ProjectileDescriptor` (useWeapon.ts) — it represents "behind
  * hard cover / out of camera view". No system computes a real value for it
- * yet (Player.tsx always passes `covered: false`); wiring a real
- * line-of-sight/frustum check is a follow-up ticket, not 3.3's job. The
- * siren/smoke factors below are live today via coverState.ts.
+ * yet; wiring a real line-of-sight/frustum check is a follow-up ticket, not
+ * 3.3's job. The siren/smoke factors below are live today via coverState.ts.
  */
 function coverFactor(outOfView: boolean): number {
   const { sirenActive, smokeActive } = coverState;
@@ -63,7 +62,8 @@ function spamSurcharge(now: number): number {
   return 1 + surcharge;
 }
 
-bus.on("shotFired", ({ covered }) => {
+bus.on("shotFired", ({ covered, owner }) => {
+  if (owner !== "player") return;
   const now = performance.now();
   const amount = BASE_SUSPICION * coverFactor(covered) * spamSurcharge(now);
   useGameState.getState().addSuspicion(amount);

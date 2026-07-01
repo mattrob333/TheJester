@@ -7,7 +7,7 @@ import mitt, { type Emitter, type Handler } from "mitt";
  * Do NOT remove existing keys — downstream systems subscribe to them.
  */
 export type GameEvents = {
-  shotFired: { covered: boolean };
+  shotFired: { covered: boolean; owner: "player" | "enemy" };
   sirenActive: { on: boolean };
   smokeActive: { on: boolean };
   enemyKilled: { id: string; byHazard: boolean };
@@ -26,8 +26,8 @@ export type GameEvents = {
  * Decoupling layer between systems: emitters and listeners never import each
  * other, only this module. Usage:
  *
- *   bus.on("shotFired", (e) => { ... });   // e is typed { covered: boolean }
- *   bus.emit("shotFired", { covered: false });
+ *   bus.on("shotFired", (e) => { ... });   // e is typed { covered, owner }
+ *   bus.emit("shotFired", { covered: false, owner: "player" });
  *   bus.off("shotFired", handler);
  */
 export const bus: Emitter<GameEvents> = mitt<GameEvents>();
