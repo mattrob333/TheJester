@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { RigidBody, BallCollider } from "@react-three/rapier";
 import type { TutorialBeaconConfig } from "../types";
 import { triggerBark } from "../announcer/Announcer";
+import { telemetry } from "../../ui/telemetry";
 
 const UNTRIGGERED_COLOR = "#facc15";
 const TRIGGERED_COLOR = "#4b5563";
@@ -27,6 +28,7 @@ export function TutorialBeacon({ config }: { config: TutorialBeaconConfig }) {
             if (triggeredRef.current) return;
             triggeredRef.current = true;
             setTriggered(true);
+            telemetry.lastBeaconId = config.barkId;
             triggerBark(config.barkId);
           }}
         />

@@ -1,5 +1,9 @@
 import { useEffect, useRef } from "react";
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 const TRACKED_KEYS = new Set([
   "KeyW",
   "KeyA",
@@ -12,6 +16,9 @@ const TRACKED_KEYS = new Set([
   "ControlRight",
 ]);
 
+/** Max drag offset (px) from the origin click before turn rate saturates. */
+const DRAG_MAX_PX = 160;
+
 export interface FlightInputState {
   keys: Set<string>;
   /** Accumulated mouse-look delta since last read; consumer resets to 0. */
@@ -22,14 +29,35 @@ export interface FlightInputState {
   locked: boolean;
   /** Browser fallback when pointer lock is denied or unavailable. */
   cursorLook: boolean;
+  /**
+   * True while the player is holding the mouse down in drag-to-look mode
+   * (pointer lock unavailable/denied). Distinct from `cursorLook`, which
+   * only means "pointer lock isn't active" — `dragActive` means the
+   * continuous drag-turn signal below is live and should be applied every
+   * frame, not just while the OS cursor is physically moving.
+   */
+  dragActive: boolean;
+  /**
+   * Signed pixel offset from the drag origin, clamped to
+   * +/-DRAG_MAX_PX. Consumer multiplies by a turn-rate constant and `dt`
+   * every frame (continuous, NOT reset to 0 after read) so turning keeps
+   * going even once the OS cursor has hit the screen edge — this is the
+   * fix for "cursor fallback can't turn past the edge of the screen."
+   */
+  dragTurnX: number;
+  dragTurnY: number;
 }
 
 /**
  * Keyboard + mouse-look input for the flight controller.
  *
- * Click the target element to engage pointer lock. If pointer lock is denied,
- * mouse movement over the canvas still turns the camera so embedded browsers
- * remain playable.
+ * Click the target element to engage pointer lock (the normal desktop/browser
+ * path). If pointer lock is denied or unavailable (embedded/in-app browsers),
+ * mouse-DOWN-and-drag over the canvas turns the camera continuously based on
+ * drag offset from the origin click point, not raw cursor movement — so
+ * turning is unbounded even though the OS cursor itself is confined to the
+ * screen. Release to stop turning; click again to set a fresh origin
+ * (re-click recapture).
  */
 export function useFlightInput(domElement: HTMLElement | null): FlightInputState {
   const state = useRef<FlightInputState>({
@@ -39,6 +67,9 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     fire: false,
     locked: false,
     cursorLook: false,
+    dragActive: false,
+    dragTurnX: 0,
+    dragTurnY: 0,
   }).current;
 
   useEffect(() => {
@@ -56,20 +87,40 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     const isGameplayMouseEvent = (e: MouseEvent) =>
       state.locked || e.target === domElement || isInsideCanvas(e);
 
+    // Drag-to-look origin, tracked in module-local closure state (not on the
+    // returned FlightInputState — it's an internal detail of this fallback).
+    let dragOriginX = 0;
+    let dragOriginY = 0;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (TRACKED_KEYS.has(e.code)) state.keys.add(e.code);
       if (e.code === "Escape" && !state.locked) {
         state.cursorLook = false;
         state.fire = false;
+        state.dragActive = false;
+        state.dragTurnX = 0;
+        state.dragTurnY = 0;
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
       state.keys.delete(e.code);
     };
     const onMouseMove = (e: MouseEvent) => {
-      if (state.locked || (state.cursorLook && isInsideCanvas(e))) {
+      if (state.locked) {
         state.mouseDX += e.movementX;
         state.mouseDY += e.movementY;
+        return;
+      }
+      if (state.dragActive) {
+        // Continuous offset-from-origin, clamped — NOT raw movementX/Y.
+        // This is what allows turning to keep going even once the OS
+        // cursor has physically hit the edge of the screen: the offset
+        // saturates at DRAG_MAX_PX rather than the cursor running out of
+        // room to move further.
+        const dx = e.clientX - dragOriginX;
+        const dy = e.clientY - dragOriginY;
+        state.dragTurnX = clamp(dx, -DRAG_MAX_PX, DRAG_MAX_PX);
+        state.dragTurnY = clamp(dy, -DRAG_MAX_PX, DRAG_MAX_PX);
       }
     };
     const onMouseDown = (e: MouseEvent) => {
@@ -83,6 +134,18 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
         e.preventDefault();
         state.cursorLook = true;
       }
+      if (!state.locked && (e.button === 0 || e.button === 2)) {
+        dragOriginX = e.clientX;
+        dragOriginY = e.clientY;
+        state.dragActive = true;
+        state.dragTurnX = 0;
+        state.dragTurnY = 0;
+      }
+    };
+    const onMouseUp = () => {
+      state.dragActive = false;
+      state.dragTurnX = 0;
+      state.dragTurnY = 0;
     };
     const onClick = (e: MouseEvent) => {
       if (!isGameplayMouseEvent(e)) return;
@@ -98,6 +161,11 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       state.locked = document.pointerLockElement === domElement;
       state.cursorLook = state.locked || state.cursorLook;
       if (!state.locked) state.fire = false;
+      if (state.locked) {
+        state.dragActive = false;
+        state.dragTurnX = 0;
+        state.dragTurnY = 0;
+      }
     };
     const onLockError = () => {
       state.locked = false;
@@ -110,12 +178,16 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     const onBlur = () => {
       state.keys.clear();
       state.fire = false;
+      state.dragActive = false;
+      state.dragTurnX = 0;
+      state.dragTurnY = 0;
     };
 
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
     domElement.addEventListener("click", onClick);
     domElement.addEventListener("contextmenu", onContextMenu);
     document.addEventListener("pointerlockchange", onLockChange);
@@ -127,6 +199,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
       domElement.removeEventListener("click", onClick);
       domElement.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("pointerlockchange", onLockChange);
@@ -135,6 +208,9 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       state.keys.clear();
       state.fire = false;
       state.cursorLook = false;
+      state.dragActive = false;
+      state.dragTurnX = 0;
+      state.dragTurnY = 0;
       if (document.pointerLockElement === domElement) {
         document.exitPointerLock();
       }

@@ -35,6 +35,13 @@ const RADIUS = 0.5;
 const HALF_HEIGHT = 0.6; // cylinder half-height (excludes the two caps)
 
 const PITCH_LIMIT = MathUtils.degToRad(85);
+/**
+ * Scales the drag-to-look pixel offset (already 0..DRAG_MAX_PX from
+ * useFlightInput) into a turn rate comparable to raw pointer-lock
+ * movementX/Y at full deflection. Tuned so dragging to the clamp edge
+ * turns roughly as fast as a brisk pointer-lock mouse swipe.
+ */
+const DRAG_TURN_SCALE = 12;
 
 // Ticket 3.1b — soft lock-on search parameters.
 const LOCK_ON_MAX_RANGE = 50; // meters
@@ -206,6 +213,8 @@ export function Player({ flightState, settings, active }: PlayerProps) {
     }
 
     if (active) {
+      telemetry.inputMode = input.locked ? "locked" : input.dragActive ? "drag" : "inactive";
+
       flightState.yaw -= input.mouseDX * settings.mouseSensitivity;
       flightState.pitch = MathUtils.clamp(
         flightState.pitch - input.mouseDY * settings.mouseSensitivity,
@@ -214,6 +223,23 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       );
       input.mouseDX = 0;
       input.mouseDY = 0;
+
+      // Drag-to-look fallback (pointer lock denied/unavailable): the input
+      // hook reports a continuous, screen-edge-independent offset from the
+      // drag origin rather than raw per-event movement, so apply it here as
+      // a per-frame turn rate (scaled by dt) instead of a one-shot delta —
+      // this is what lets the player keep turning 360 degrees in either
+      // direction even though the OS cursor itself is pinned near the
+      // screen edge.
+      if (input.dragActive && (input.dragTurnX !== 0 || input.dragTurnY !== 0)) {
+        const dragTurnRate = settings.mouseSensitivity * DRAG_TURN_SCALE;
+        flightState.yaw -= input.dragTurnX * dragTurnRate * dt;
+        flightState.pitch = MathUtils.clamp(
+          flightState.pitch - input.dragTurnY * dragTurnRate * dt,
+          -PITCH_LIMIT,
+          PITCH_LIMIT,
+        );
+      }
 
       const keys = input.keys;
       const fwdIn = (keys.has("KeyW") ? 1 : 0) - (keys.has("KeyS") ? 1 : 0);

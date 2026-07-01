@@ -3,6 +3,7 @@ import { bus, type GameEvents } from "../game/systems/events";
 import { useGameState } from "../game/systems/gameState";
 import { coverState } from "../game/systems/coverState";
 import { isLockdownActive } from "../game/systems/lockdown";
+import { useWeapon, FIRE_COOLDOWN } from "../game/combat/useWeapon";
 import { telemetry } from "./telemetry";
 
 type LogEntry = { id: number; type: keyof GameEvents; payload: string };
@@ -26,6 +27,10 @@ export function DebugOverlay() {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [cover, setCover] = useState({ siren: false, smoke: false });
   const [lockdown, setLockdown] = useState(false);
+  const [inputMode, setInputMode] = useState<"locked" | "drag" | "inactive">("inactive");
+  const [fireCooldown, setFireCooldown] = useState(0);
+  const [lastBeacon, setLastBeacon] = useState<string | null>(null);
+  const weapon = useWeapon();
 
   // Own rAF loop: FPS + camera position + player speed (read from the telemetry bridge).
   useEffect(() => {
@@ -42,12 +47,16 @@ export function DebugOverlay() {
         setSpeed(telemetry.speed);
         setCover({ siren: coverState.sirenActive, smoke: coverState.smokeActive });
         setLockdown(isLockdownActive());
+        setInputMode(telemetry.inputMode);
+        setLastBeacon(telemetry.lastBeaconId);
+        const elapsed = now / 1000 - weapon.lastFire;
+        setFireCooldown(Math.max(0, FIRE_COOLDOWN - elapsed));
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [weapon]);
 
   // Subscribe to ALL bus events for the scrolling log.
   const counter = useRef(0);
@@ -89,6 +98,21 @@ export function DebugOverlay() {
         <Row label="smoke" value={cover.smoke ? "ON" : "off"} />
         <Row label="covered" value={cover.siren || cover.smoke ? "YES" : "no"} />
         <Row label="lockdown" value={lockdown ? "DETECTED" : "clear"} />
+        <Row
+          label="input mode"
+          value={
+            inputMode === "locked"
+              ? "pointer locked"
+              : inputMode === "drag"
+                ? "drag-to-look"
+                : "inactive"
+          }
+        />
+        <Row
+          label="fire cooldown"
+          value={fireCooldown > 0 ? `${fmt(fireCooldown)}s` : "ready"}
+        />
+        <Row label="tutorial beat" value={lastBeacon ?? "— none yet —"} />
       </div>
 
       {lockdown && (
@@ -98,6 +122,7 @@ export function DebugOverlay() {
       <div style={styles.section}>
         <div style={styles.title}>controls (follow camera)</div>
         <div style={styles.dim}>click/RMB canvas to look · WASD move</div>
+        <div style={styles.dim}>no pointer lock? hold + drag to turn</div>
         <div style={styles.dim}>Space/Ctrl up/down · Shift boost</div>
         <div style={styles.dim}>LMB to fire</div>
       </div>

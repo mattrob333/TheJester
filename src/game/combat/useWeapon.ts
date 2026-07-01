@@ -18,7 +18,7 @@ export interface ProjectileDescriptor {
   targetId: string | null;
 }
 
-const FIRE_COOLDOWN = 0.25; // seconds
+export const FIRE_COOLDOWN = 0.25; // seconds
 const PROJECTILE_SPEED = 45; // m/s
 const MAX_LIFETIME = 1.5; // seconds
 const MAX_RANGE = 60; // meters
