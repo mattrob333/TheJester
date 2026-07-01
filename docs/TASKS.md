@@ -69,20 +69,24 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] `npm install` + `npm run build` re-verified green on `main`
 
 ## Overnight Agent Queue — Controls + Feel First
-- [ ] **6.2 Fix mouse-look capture**
-  - [ ] Ensure normal browser/desktop play enters pointer lock reliably after an explicit canvas click.
-  - [ ] Keep embedded-browser cursor fallback, but do not let fallback be the main path when pointer lock is available.
-  - [ ] Add debug overlay readout for input mode: `pointer locked`, `cursor fallback`, or `inactive`.
-  - [ ] Verify: player can rotate 360 degrees left and right without the cursor hitting the screen edge.
-  - [ ] Verify: Esc exits capture cleanly; clicking the canvas re-enters capture; LMB still fires exactly once per accepted click.
+- [x] **6.2 Fix mouse-look capture** (commit `9900422`)
+  - [x] Normal browser/desktop path still enters pointer lock on canvas click, unchanged — cursor fallback only activates on `pointerlockerror`/deny.
+  - [x] Cursor fallback replaced with drag-to-look (mousedown sets an origin, continuous clamped offset-from-origin drives turn rate, not raw `movementX/Y`) — this is what removes the screen-edge turn cap the fallback previously had. Pointer lock remains primary; drag-to-look is fallback-only.
+  - [x] Debug overlay readout added: `input mode` row shows `pointer locked` / `drag-to-look` / `inactive`.
+  - [ ] Verify (needs a human/browser-automation play-test, not code review alone): player can rotate 360 degrees left and right without the cursor hitting the screen edge, in an actual browser session.
+  - [x] Esc / blur / re-lock all clear drag state correctly (code-reviewed: `onKeyDown` Escape handler, `onBlur`, `onLockChange` all reset `dragActive`/`dragTurnX`/`dragTurnY`); LMB fire remains a queued one-shot-per-click (unchanged from the prior fix, not touched by this ticket).
 - [ ] **6.3 Add a non-PC-gamer control option**
   - [ ] Add either keyboard turn controls, drag-to-look with recentering, or another explicit accessibility/control mode.
   - [ ] Expose the mode in the Dev/Flight controls or a simple in-game toggle.
   - [ ] Verify: a player can turn fully around, fly forward, ascend/descend, and fire without needing FPS-style pointer lock comfort.
-- [ ] **6.4 Add feel instrumentation**
-  - [ ] Show player position, speed, input mode, shot cooldown/accepted shot state, cover factor, current tutorial beat, last damage source, and hazard phase.
-  - [ ] Keep instrumentation unobtrusive and dev-facing; it can live in `DebugOverlay`.
-  - [ ] Verify: a developer agent can produce a pass/fail report without guessing from screenshots.
+  - **Note:** 6.2's drag-to-look fallback (`useFlightInput.ts`) already gives non-pointer-lock players a working turn mechanism without recentering; 6.3 as scoped calls for an *explicit, exposed* control-mode toggle (e.g. a settings/dev-controls UI choice), which is additional scope beyond the automatic fallback. Left open — not implicitly satisfied by 6.2.
+- [x] **6.4 Add feel instrumentation** (partial — commit `9900422`)
+  - [x] Input mode readout (see 6.2).
+  - [x] Fire cooldown readout: new exported `FIRE_COOLDOWN` constant + `useWeapon().lastFire` drive a `fire cooldown` row (`Xs` or `ready`).
+  - [x] Current tutorial beat readout: `telemetry.lastBeaconId`, written by `TutorialBeacon.tsx` on first trigger, shown as a `tutorial beat` row.
+  - [x] Player position/speed already existed (`cam`/`speed` rows); health/suspicion/cover/lockdown already existed.
+  - [ ] Still missing: explicit "last damage source" and "hazard phase" readouts (no system currently tracks damage source or hazard phase state to surface — would need new tracking fields, not just a UI row; left for a follow-up tick since it's additive and doesn't block 6.2's fix).
+  - [ ] Verify: a developer agent can produce a pass/fail report without guessing from screenshots — instrumentation now exists but the actual play-test verification pass is still pending (same play-test-tooling gap as Phase 6 overall).
 - [ ] **6.5 Run Phase 6 acceptance and tune the loop**
   - [ ] Pass/fail all 8 tutorial beacons in order.
   - [ ] Pass/fail two hazard dodges minimum.
