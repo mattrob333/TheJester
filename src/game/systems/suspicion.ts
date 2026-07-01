@@ -74,15 +74,33 @@ bus.on("shotFired", ({ covered }) => {
 // doesn't need React's render loop). Faster decay while hidden (siren or
 // smoke active) than while fully visible.
 //
-// TODO(Phase 4): the spec also calls for faster decay when a hazard (not the
-// player) kills an enemy, or when a section clears weaponless. Both depend
-// on enemy death tracking (`enemyKilled: { id, byHazard }` in GameEvents,
-// unused since Phase 0) which doesn't exist until Phase 4 lands real
-// enemies. Baseline hidden/visible decay below is the spec'd starting point;
-// wire the two kill/clear bonuses in once enemies exist.
+// Hazard-killed-enemy bonus (spec'd in DEVELOPMENT_LOG.md 3.3, deferred
+// until Phase 4 landed real enemies + `enemyKilled` event emission): an
+// instant extra decay chunk fires whenever `enemyKilled` reports
+// `byHazard: true` — rewards baiting enemies into hazards over shooting
+// them, consistent with the stealth-favoring suspicion model. No enemy
+// currently sets `byHazard: true` (ArenaGuard/SecurityDrone both always
+// emit `false` — neither dies to a hazard collision yet, that's a future
+// enemy/hazard-interaction ticket), so this bonus is wired and correct but
+// not yet reachable in play; it activates automatically once a hazard-kill
+// path exists, no further suspicion.ts changes needed then.
+//
+// TODO(Phase 7+, product decision needed): "section clears weaponless" bonus
+// is NOT implemented — the codebase has no concept of an arena "section"
+// (arenas are single flat spaces with sequential beacons/hazards, not
+// discrete rooms/sections), so this would require a product/level-design
+// decision on what a "section" is before it can be built. Flag via
+// course-correction if/when arena design introduces sections.
 const DECAY_RATE_VISIBLE = 4; // suspicion points/sec while visible
 const DECAY_RATE_HIDDEN = 12; // suspicion points/sec while hidden (siren or smoke)
 const DECAY_TICK_MS = 200;
+const HAZARD_KILL_DECAY_BONUS = 15; // instant suspicion reduction on a hazard kill
+
+bus.on("enemyKilled", ({ byHazard }) => {
+  if (byHazard) {
+    useGameState.getState().decaySuspicion(HAZARD_KILL_DECAY_BONUS);
+  }
+});
 
 const WARNING_THRESHOLD = 60;
 const DETECTED_THRESHOLD = 100;
