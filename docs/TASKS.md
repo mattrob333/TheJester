@@ -80,13 +80,14 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [ ] Expose the mode in the Dev/Flight controls or a simple in-game toggle.
   - [ ] Verify: a player can turn fully around, fly forward, ascend/descend, and fire without needing FPS-style pointer lock comfort.
   - **Note:** 6.2's drag-to-look fallback (`useFlightInput.ts`) already gives non-pointer-lock players a working turn mechanism without recentering; 6.3 as scoped calls for an *explicit, exposed* control-mode toggle (e.g. a settings/dev-controls UI choice), which is additional scope beyond the automatic fallback. Left open — not implicitly satisfied by 6.2.
-- [x] **6.4 Add feel instrumentation** (partial — commit `9900422`)
+- [x] **6.4 Add feel instrumentation** (commit `9900422` + this tick)
   - [x] Input mode readout (see 6.2).
   - [x] Fire cooldown readout: new exported `FIRE_COOLDOWN` constant + `useWeapon().lastFire` drive a `fire cooldown` row (`Xs` or `ready`).
   - [x] Current tutorial beat readout: `telemetry.lastBeaconId`, written by `TutorialBeacon.tsx` on first trigger, shown as a `tutorial beat` row.
   - [x] Player position/speed already existed (`cam`/`speed` rows); health/suspicion/cover/lockdown already existed.
-  - [ ] Still missing: explicit "last damage source" and "hazard phase" readouts (no system currently tracks damage source or hazard phase state to surface — would need new tracking fields, not just a UI row; left for a follow-up tick since it's additive and doesn't block 6.2's fix).
-  - [ ] Verify: a developer agent can produce a pass/fail report without guessing from screenshots — instrumentation now exists but the actual play-test verification pass is still pending (same play-test-tooling gap as Phase 6 overall).
+  - [x] "Last damage source" readout: `playerDamaged` event gained a required `source: string` field (razor/crusher/laser/arena-guard) set at each of the 4 emit sites; `Player.tsx`'s existing damage-flash subscriber writes it to `telemetry.lastDamageSource`; `DebugOverlay.tsx` shows a `last damage source` row.
+  - [x] "Hazard phase" readout: each cyclic hazard (crusher/laser) writes `telemetry.hazardPhase = "<type>:<phase>"` while the player overlaps its sensor, clearing to `null` on exit; razor (always-armed, no phase cycle) writes `"razor:active"` while overlapped. `DebugOverlay.tsx` shows a `hazard phase` row.
+  - [x] Verify: `npm run build` green (zero TS errors, 166 modules) after wiring all 4 hazard/enemy emit sites + telemetry fields + DebugOverlay rows. Full interactive play-test verification of the readouts' *correctness in motion* still pending the same play-test-tooling gap as Phase 6 overall — the instrumentation itself is code-complete and build-verified.
 - [ ] **6.5 Run Phase 6 acceptance and tune the loop**
   - [ ] Pass/fail all 8 tutorial beacons in order.
   - [ ] Pass/fail two hazard dodges minimum.

@@ -4,6 +4,7 @@ import { RigidBody, CylinderCollider } from "@react-three/rapier";
 import type { Group } from "three";
 import { useGameState } from "../../systems/gameState";
 import { bus } from "../../systems/events";
+import { telemetry } from "../../../ui/telemetry";
 import { HIT_COOLDOWN } from "./hazardTiming";
 import { setSirenSourceActive, clearSirenSource } from "../../systems/coverState";
 import type { RazorHazardConfig } from "../../types";
@@ -42,12 +43,15 @@ export function RazorHazard({ config }: { config: RazorHazardConfig }) {
       bladeRef.current.rotation.y += (config.rpm / 60) * Math.PI * 2 * dt;
     }
     if (overlapCount.current > 0) {
+      telemetry.hazardPhase = "razor:active";
       const now = state.clock.elapsedTime;
       if (now - lastHit.current >= HIT_COOLDOWN) {
         lastHit.current = now;
         useGameState.getState().damage(DAMAGE);
-        bus.emit("playerDamaged", { amount: DAMAGE });
+        bus.emit("playerDamaged", { amount: DAMAGE, source: "razor" });
       }
+    } else if (telemetry.hazardPhase?.startsWith("razor:")) {
+      telemetry.hazardPhase = null;
     }
   });
 

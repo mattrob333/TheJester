@@ -30,6 +30,8 @@ export function DebugOverlay() {
   const [inputMode, setInputMode] = useState<"locked" | "drag" | "inactive">("inactive");
   const [fireCooldown, setFireCooldown] = useState(0);
   const [lastBeacon, setLastBeacon] = useState<string | null>(null);
+  const [lastDamageSource, setLastDamageSource] = useState<string | null>(null);
+  const [hazardPhase, setHazardPhase] = useState<string | null>(null);
   const weapon = useWeapon();
 
   // Own rAF loop: FPS + camera position + player speed (read from the telemetry bridge).
@@ -49,6 +51,8 @@ export function DebugOverlay() {
         setLockdown(isLockdownActive());
         setInputMode(telemetry.inputMode);
         setLastBeacon(telemetry.lastBeaconId);
+        setLastDamageSource(telemetry.lastDamageSource);
+        setHazardPhase(telemetry.hazardPhase);
         const elapsed = now / 1000 - weapon.lastFire;
         setFireCooldown(Math.max(0, FIRE_COOLDOWN - elapsed));
       }
@@ -113,6 +117,8 @@ export function DebugOverlay() {
           value={fireCooldown > 0 ? `${fmt(fireCooldown)}s` : "ready"}
         />
         <Row label="tutorial beat" value={lastBeacon ?? "— none yet —"} />
+        <Row label="last damage source" value={lastDamageSource ?? "— none yet —"} />
+        <Row label="hazard phase" value={hazardPhase ?? "— not overlapping —"} />
       </div>
 
       {lockdown && (

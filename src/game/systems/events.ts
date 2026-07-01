@@ -11,7 +11,8 @@ export type GameEvents = {
   sirenActive: { on: boolean };
   smokeActive: { on: boolean };
   enemyKilled: { id: string; byHazard: boolean };
-  playerDamaged: { amount: number };
+  /** `source` is a short hazard/enemy id (e.g. "razor", "crusher", "laser", "arena-guard") — Ticket 6.4 "last damage source" instrumentation. */
+  playerDamaged: { amount: number; source: string };
   playerHidden: { hidden: boolean };
   checkpointReached: { pos: [number, number, number] };
   suspicionThreshold: { level: "warning" | "detected" };

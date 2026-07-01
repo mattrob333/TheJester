@@ -120,8 +120,9 @@ function DamageFlash() {
   const flashStart = useRef(-Infinity);
 
   useEffect(() => {
-    const handler = () => {
+    const handler = (payload: { amount: number; source: string }) => {
       pending.current = true;
+      telemetry.lastDamageSource = payload.source;
     };
     bus.on("playerDamaged", handler);
     return () => bus.off("playerDamaged", handler);

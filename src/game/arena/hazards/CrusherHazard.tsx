@@ -4,6 +4,7 @@ import { RigidBody, CuboidCollider } from "@react-three/rapier";
 import type { Mesh, MeshStandardMaterial } from "three";
 import { useGameState } from "../../systems/gameState";
 import { bus } from "../../systems/events";
+import { telemetry } from "../../../ui/telemetry";
 import { cyclePhase, HAZARD_COLOR, HIT_COOLDOWN } from "./hazardTiming";
 import type { CrusherHazardConfig } from "../../types";
 
@@ -38,12 +39,15 @@ export function CrusherHazard({ config }: { config: CrusherHazardConfig }) {
       mat.emissiveIntensity = phase === "idle" ? 0.3 : 1.4;
     }
 
-    if (phase === "active" && overlapCount.current > 0) {
-      if (now - lastHit.current >= HIT_COOLDOWN) {
+    if (overlapCount.current > 0) {
+      telemetry.hazardPhase = `crusher:${phase}`;
+      if (phase === "active" && now - lastHit.current >= HIT_COOLDOWN) {
         lastHit.current = now;
         useGameState.getState().damage(DAMAGE);
-        bus.emit("playerDamaged", { amount: DAMAGE });
+        bus.emit("playerDamaged", { amount: DAMAGE, source: "crusher" });
       }
+    } else if (telemetry.hazardPhase?.startsWith("crusher:")) {
+      telemetry.hazardPhase = null;
     }
   });
 

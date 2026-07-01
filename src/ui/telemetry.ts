@@ -17,9 +17,27 @@ export const telemetry: {
   inputMode: "locked" | "drag" | "inactive";
   /** Last tutorial beacon bark id triggered, for the "current teaching beat" readout. */
   lastBeaconId: string | null;
+  /**
+   * `source` of the most recent `playerDamaged` event (e.g. "razor",
+   * "crusher", "laser", "arena-guard") — Ticket 6.4 "last damage source"
+   * readout. Written by Player.tsx's existing playerDamaged subscription.
+   */
+  lastDamageSource: string | null;
+  /**
+   * `"<hazardType>:<phase>"` (e.g. "crusher:active") for whichever cyclic
+   * hazard (crusher/laser) the player is currently standing inside the
+   * sensor volume of, or `"razor:active"` while touching the always-armed
+   * razor blade — Ticket 6.4 "hazard phase" readout. `null` when the player
+   * isn't overlapping any hazard sensor. Each hazard writes this only while
+   * its own overlap count is > 0, so it reflects the hazard the player is
+   * actually interacting with rather than a global/arbitrary cycle.
+   */
+  hazardPhase: string | null;
 } = {
   camPos: [0, 0, 0],
   speed: 0,
   inputMode: "inactive",
   lastBeaconId: null,
+  lastDamageSource: null,
+  hazardPhase: null,
 };

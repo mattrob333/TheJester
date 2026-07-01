@@ -88,7 +88,7 @@ export function ArenaGuard({ config }: { config: ArenaGuardConfig }) {
       if (now - lastAttack.current >= ATTACK_COOLDOWN) {
         lastAttack.current = now;
         useGameState.getState().damage(ATTACK_DAMAGE);
-        bus.emit("playerDamaged", { amount: ATTACK_DAMAGE });
+        bus.emit("playerDamaged", { amount: ATTACK_DAMAGE, source: "arena-guard" });
       }
     } else if (stateRef.current === "chase") {
       if (distToPlayer > 1e-4) {

@@ -4,6 +4,7 @@ import { RigidBody, CuboidCollider } from "@react-three/rapier";
 import type { Mesh, MeshStandardMaterial } from "three";
 import { useGameState } from "../../systems/gameState";
 import { bus } from "../../systems/events";
+import { telemetry } from "../../../ui/telemetry";
 import { cyclePhase, HIT_COOLDOWN } from "./hazardTiming";
 import type { LaserHazardConfig } from "../../types";
 
@@ -57,8 +58,13 @@ export function LaserHazard({ config }: { config: LaserHazardConfig }) {
       if (now - lastHit.current >= HIT_COOLDOWN) {
         lastHit.current = now;
         useGameState.getState().damage(DAMAGE);
-        bus.emit("playerDamaged", { amount: DAMAGE });
+        bus.emit("playerDamaged", { amount: DAMAGE, source: "laser" });
       }
+    }
+    if (overlapCount.current > 0) {
+      telemetry.hazardPhase = `laser:${phase}`;
+    } else if (telemetry.hazardPhase?.startsWith("laser:")) {
+      telemetry.hazardPhase = null;
     }
   });
 
