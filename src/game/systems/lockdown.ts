@@ -1,6 +1,7 @@
 import { bus } from "./events";
 import { setSirenSourceActive } from "./coverState";
 import { useGameState } from "./gameState";
+import { triggerBark } from "../announcer/Announcer";
 
 /**
  * Ticket 3.4 — Cheating-detected response.
@@ -17,13 +18,17 @@ import { useGameState } from "./gameState";
  *   2. Emit a `lockdownActive: { on: true/false }` bus event so any UI
  *      (debug overlay today, a real HUD alert later) can react without
  *      polling the bus itself.
+ *   3. (Follow-up, this tick) Play a story-tier-aware "you've been made"
+ *      announcer bark via `triggerBark("lockdown_detected")` — now that
+ *      Phase 5 (5.1/5.2 bark system + tier resolution) is complete, this
+ *      half of the original 3.4 deferral is no longer blocked.
  *
- * Full version (elite guards + drones spawn, announcer line) depends on
- * Phase 4 (4.1 enemies exist) and Phase 5 (5.x announcer). That half is
- * explicitly NOT implemented here — see the TODO below. This module owns
- * only the "is a lockdown currently active" boolean + the forced-siren
- * side effect; spawning real responders is a follow-up once those systems
- * exist.
+ * Elite-guard + drone SPAWN on detection still depends on a dedicated
+ * enemy-spawning API that neither 4.1 (Arena Guard) nor 4.2 (Security
+ * Drone) currently exposes (they're placed once via arena config, not
+ * spawned at runtime) — that half remains an explicit TODO below, since
+ * building a runtime spawn system is a larger, more architecturally
+ * significant change than this tick's scope.
  *
  * Clear condition: rather than adding a new bus event for "suspicion fully
  * decayed", this module polls `useGameState.getState().suspicion` on its
@@ -50,11 +55,13 @@ function setLockdown(active: boolean) {
 bus.on("suspicionThreshold", ({ level }) => {
   if (level === "detected") {
     setLockdown(true);
+    triggerBark("lockdown_detected");
   }
-  // TODO(Phase 4/5): on "detected", also spawn elite guards + a security
-  // drone (4.1/4.2) and fire an announcer "you've been made" line (5.x).
-  // Neither system exists yet; this is the explicit deferral the spec
-  // calls for rather than leaving the ticket silently half-done.
+  // TODO(Phase 7+, needs runtime enemy-spawn API): on "detected", also spawn
+  // elite guards + a security drone. Neither ArenaGuard nor SecurityDrone
+  // currently supports runtime spawning (both are placed once via arena
+  // config at load time) — this is now the only remaining explicit deferral
+  // from the original 3.4 ticket; the announcer line half shipped above.
 });
 
 setInterval(() => {
