@@ -33,6 +33,11 @@ export const telemetry: {
    * actually interacting with rather than a global/arbitrary cycle.
    */
   hazardPhase: string | null;
+  /**
+   * Ticket 6.3 — whether the explicit keyboard-turn control mode (toggled
+   * via T) is currently active, for the DebugOverlay control-mode readout.
+   */
+  keyboardTurnMode: boolean;
 } = {
   camPos: [0, 0, 0],
   speed: 0,
@@ -40,4 +45,5 @@ export const telemetry: {
   lastBeaconId: null,
   lastDamageSource: null,
   hazardPhase: null,
+  keyboardTurnMode: false,
 };

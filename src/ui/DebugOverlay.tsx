@@ -32,6 +32,7 @@ export function DebugOverlay() {
   const [lastBeacon, setLastBeacon] = useState<string | null>(null);
   const [lastDamageSource, setLastDamageSource] = useState<string | null>(null);
   const [hazardPhase, setHazardPhase] = useState<string | null>(null);
+  const [keyboardTurnMode, setKeyboardTurnMode] = useState(false);
   const weapon = useWeapon();
 
   // Own rAF loop: FPS + camera position + player speed (read from the telemetry bridge).
@@ -53,6 +54,7 @@ export function DebugOverlay() {
         setLastBeacon(telemetry.lastBeaconId);
         setLastDamageSource(telemetry.lastDamageSource);
         setHazardPhase(telemetry.hazardPhase);
+        setKeyboardTurnMode(telemetry.keyboardTurnMode);
         const elapsed = now / 1000 - weapon.lastFire;
         setFireCooldown(Math.max(0, FIRE_COOLDOWN - elapsed));
       }
@@ -119,6 +121,7 @@ export function DebugOverlay() {
         <Row label="tutorial beat" value={lastBeacon ?? "— none yet —"} />
         <Row label="last damage source" value={lastDamageSource ?? "— none yet —"} />
         <Row label="hazard phase" value={hazardPhase ?? "— not overlapping —"} />
+        <Row label="control mode" value={keyboardTurnMode ? "keyboard-turn (T)" : "mouse-look (T)"} />
       </div>
 
       {lockdown && (
@@ -129,6 +132,7 @@ export function DebugOverlay() {
         <div style={styles.title}>controls (follow camera)</div>
         <div style={styles.dim}>click/RMB canvas to look · WASD move</div>
         <div style={styles.dim}>no pointer lock? hold + drag to turn</div>
+        <div style={styles.dim}>press T to toggle keyboard-turn (arrow keys)</div>
         <div style={styles.dim}>Space/Ctrl up/down · Shift boost</div>
         <div style={styles.dim}>LMB to fire</div>
       </div>

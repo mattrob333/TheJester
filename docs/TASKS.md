@@ -75,11 +75,11 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Debug overlay readout added: `input mode` row shows `pointer locked` / `drag-to-look` / `inactive`.
   - [ ] Verify (needs a human/browser-automation play-test, not code review alone): player can rotate 360 degrees left and right without the cursor hitting the screen edge, in an actual browser session.
   - [x] Esc / blur / re-lock all clear drag state correctly (code-reviewed: `onKeyDown` Escape handler, `onBlur`, `onLockChange` all reset `dragActive`/`dragTurnX`/`dragTurnY`); LMB fire remains a queued one-shot-per-click (unchanged from the prior fix, not touched by this ticket).
-- [ ] **6.3 Add a non-PC-gamer control option**
-  - [ ] Add either keyboard turn controls, drag-to-look with recentering, or another explicit accessibility/control mode.
-  - [ ] Expose the mode in the Dev/Flight controls or a simple in-game toggle.
-  - [ ] Verify: a player can turn fully around, fly forward, ascend/descend, and fire without needing FPS-style pointer lock comfort.
-  - **Note:** 6.2's drag-to-look fallback (`useFlightInput.ts`) already gives non-pointer-lock players a working turn mechanism without recentering; 6.3 as scoped calls for an *explicit, exposed* control-mode toggle (e.g. a settings/dev-controls UI choice), which is additional scope beyond the automatic fallback. Left open — not implicitly satisfied by 6.2.
+- [x] **6.3 Add a non-PC-gamer control option** (commit pending — this tick)
+  - [x] Added an explicit keyboard turn mode: press **T** to toggle; while active, Arrow Left/Right/Up/Down drive continuous yaw/pitch turn (same continuous-rate model as 6.2's drag-to-look, just keyboard-sourced instead of mouse-position-sourced). Works independently of pointer-lock/drag-to-look state.
+  - [x] Exposed in the Debug Overlay: new `control mode` row shows `keyboard-turn (T)` / `mouse-look (T)`; controls hint line added (`press T to toggle keyboard-turn (arrow keys)`). README controls section updated.
+  - [ ] Verify: a player can turn fully around, fly forward, ascend/descend, and fire without needing FPS-style pointer lock comfort — code-reviewed as correct (keyboard-turn uses the same yaw/pitch clamp math as mouse-look and drag-to-look, WASD/Space/Ctrl/fire are unaffected by which turn mode is active), but interactive confirmation needs the same human/browser-automation play-test as the rest of Phase 6.
+  - **Note:** 6.2's drag-to-look fallback is automatic (only engages when pointer lock is denied); 6.3 is the additional *explicit, player-toggled* mode this ticket called for — now shipped, no longer open.
 - [x] **6.4 Add feel instrumentation** (commit `9900422` + this tick)
   - [x] Input mode readout (see 6.2).
   - [x] Fire cooldown readout: new exported `FIRE_COOLDOWN` constant + `useWeapon().lastFire` drive a `fire cooldown` row (`Xs` or `ready`).

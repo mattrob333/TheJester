@@ -14,6 +14,10 @@ const TRACKED_KEYS = new Set([
   "ShiftRight",
   "ControlLeft",
   "ControlRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
 ]);
 
 /** Max drag offset (px) from the origin click before turn rate saturates. */
@@ -46,6 +50,18 @@ export interface FlightInputState {
    */
   dragTurnX: number;
   dragTurnY: number;
+  /**
+   * Ticket 6.3 — explicit, exposed control-mode toggle (T key). When true,
+   * ArrowLeft/ArrowRight/ArrowUp/ArrowDown drive a continuous turn rate
+   * every frame, exactly like `dragTurnX`/`dragTurnY` above but sourced
+   * from discrete key state rather than mouse position. This is a genuine
+   * accessibility option for players uncomfortable with mouse-look (FPS
+   * pointer-lock or drag-to-look both require a mouse) — distinct from the
+   * automatic drag-to-look FALLBACK shipped in 6.2, which only activates
+   * when pointer lock is denied/unavailable. Keyboard-turn mode can be
+   * toggled on/off regardless of pointer-lock state.
+   */
+  keyboardTurnMode: boolean;
 }
 
 /**
@@ -70,6 +86,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     dragActive: false,
     dragTurnX: 0,
     dragTurnY: 0,
+    keyboardTurnMode: false,
   }).current;
 
   useEffect(() => {
@@ -94,6 +111,9 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (TRACKED_KEYS.has(e.code)) state.keys.add(e.code);
+      if (e.code === "KeyT") {
+        state.keyboardTurnMode = !state.keyboardTurnMode;
+      }
       if (e.code === "Escape" && !state.locked) {
         state.cursorLook = false;
         state.fire = false;

@@ -42,6 +42,13 @@ const PITCH_LIMIT = MathUtils.degToRad(85);
  * turns roughly as fast as a brisk pointer-lock mouse swipe.
  */
 const DRAG_TURN_SCALE = 12;
+/**
+ * Ticket 6.3 — scales discrete arrow-key input into the same turn-rate
+ * space as DRAG_TURN_SCALE above. Arrow keys are a binary -1/0/1 signal
+ * (not a 0..DRAG_MAX_PX continuous offset), so this constant is tuned
+ * independently for a comfortable full-speed keyboard turn.
+ */
+const KEY_TURN_SCALE = 2.5;
 
 // Ticket 3.1b — soft lock-on search parameters.
 const LOCK_ON_MAX_RANGE = 50; // meters
@@ -215,6 +222,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
 
     if (active) {
       telemetry.inputMode = input.locked ? "locked" : input.dragActive ? "drag" : "inactive";
+      telemetry.keyboardTurnMode = input.keyboardTurnMode;
 
       flightState.yaw -= input.mouseDX * settings.mouseSensitivity;
       flightState.pitch = MathUtils.clamp(
@@ -240,6 +248,26 @@ export function Player({ flightState, settings, active }: PlayerProps) {
           -PITCH_LIMIT,
           PITCH_LIMIT,
         );
+      }
+
+      // Ticket 6.3 — explicit keyboard-turn control mode (toggled via T,
+      // see useFlightInput.ts). A genuine accessibility option: unlike the
+      // drag-to-look fallback above (which only engages automatically when
+      // pointer lock is unavailable), this is player-chosen and works
+      // regardless of pointer-lock state, so a non-mouse-look-comfortable
+      // player can turn/look entirely with the keyboard.
+      if (input.keyboardTurnMode) {
+        const turnX = (input.keys.has("ArrowRight") ? 1 : 0) - (input.keys.has("ArrowLeft") ? 1 : 0);
+        const turnY = (input.keys.has("ArrowDown") ? 1 : 0) - (input.keys.has("ArrowUp") ? 1 : 0);
+        if (turnX !== 0 || turnY !== 0) {
+          const keyTurnRate = settings.mouseSensitivity * KEY_TURN_SCALE;
+          flightState.yaw -= turnX * keyTurnRate * dt;
+          flightState.pitch = MathUtils.clamp(
+            flightState.pitch - turnY * keyTurnRate * dt,
+            -PITCH_LIMIT,
+            PITCH_LIMIT,
+          );
+        }
       }
 
       const keys = input.keys;

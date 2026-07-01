@@ -64,6 +64,11 @@ the debug overlay (top-left).
 - No input → the jetpack **hovers** in place (gravity is zeroed; velocity is
   fully input-driven, not simulated free-fall).
 - **Esc** releases pointer lock (browser default).
+- **T** — toggle **keyboard-turn mode** (accessibility option, Ticket 6.3):
+  while active, **Arrow Left/Right/Up/Down** turn/look continuously, no
+  mouse required. Works independently of pointer-lock/drag-to-look state —
+  toggle back with T to return to mouse-look. Current mode is shown in the
+  debug overlay's `control mode` row.
 
 ### Arena 1 — Orientation
 
