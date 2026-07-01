@@ -15,7 +15,7 @@ Future developers (and future you) depend on this staying accurate.
 
 # PART 1 — Development Log (what exists today)
 
-## Consolidation update - 2026-07-01
+## Overnight handoff - 2026-07-01
 
 Current branch: `main` at GitHub remote HEAD. Phases 0-5 are implemented, and
 Phase 6.1 has all eight orientation teaching beats composed in `arena-01.json`.
@@ -35,29 +35,50 @@ render at `http://127.0.0.1:6200` with the HUD/event log showing owned,
 covered player shots and no runtime errors. Remaining warnings are framework /
 Three deprecations plus the expected large R3F/Three bundle warning.
 
-Next build queue:
+Matt play-tested the current browser build and hit the primary feel blocker:
+mouse-look is cumbersome when pointer lock is not engaged. The fallback
+cursor-look path only accumulates movement while the cursor stays inside the
+canvas, so turning stalls at the screen edge. For a player who is not already a
+PC/FPS player, this reads as broken or hostile. Treat this as the first build
+priority before adding content.
 
-1. Finish Phase 6 acceptance: play through `arena-01` in one session and record
+Overnight build queue:
+
+1. Fix and verify look controls. Pointer-lock mode should support continuous
+   360-degree mouse-look after a clear click-to-capture interaction. Fallback
+   cursor-look may remain for embedded browsers, but it must not be the default
+   felt path when pointer lock is available. Add HUD/debug readout for
+   `locked` vs `cursorLook` so agents can verify which path is active.
+2. Add a non-PC-gamer control option before tuning the arena. Either add a
+   keyboard turn mode, a drag-to-look mode with recentering, or another simple
+   scheme that lets a player turn fully without fighting screen edges. Acceptance:
+   a player can rotate 360 degrees in both directions without running out of
+   mousepad/screen, then fly forward through the first three beacons.
+3. Add feel instrumentation, temporarily if needed: player position, current
+   speed, input mode, accepted/rejected shot cooldown, active cover factor,
+   current tutorial beat, last damage source, and hazard phase. If an agent
+   cannot observe it, it is not verified.
+4. Finish Phase 6 acceptance: play through `arena-01` in one session and record
    pass/fail for all tutorial beats, both enemy types, siren/smoke cover,
    suspicion thresholds, damage/respawn, checkpoint, exit, and announcer timing.
-2. Tune before expanding: if the loop feels rough, adjust flight feel, hazard
+5. Tune before expanding: if the loop feels rough, adjust flight feel, hazard
    spacing, enemy pressure, suspicion numbers, beacon placement, and bark timing
    before adding new content.
-3. Begin Phase 7 only after the Phase 6 loop is accepted, or after Matt
+6. Begin Phase 7 only after the Phase 6 loop is accepted, or after Matt
    explicitly authorizes moving forward with known tuning debt.
 
 ## Status at a glance
 
 | Phase | Tickets | Status |
 |---|---|---|
-| 0 — Scaffold | 0.1, 0.3, 0.4 | ✅ Done |
-| 1 — Movement core | 1.1, 1.2, 1.3 | ✅ Done |
-| 2 — Arena, hazards, survival | 2.1, 2.2, 2.3, 2.4 | ✅ Done |
-| 3 — Combat + Suspicion | 3.1, 3.1b, 3.2, 3.3, 3.4 | 3.1 ✅ / 3.1b in progress |
-| 4 — Enemies | 4.1, 4.2 | ⬜ Not started |
-| 5 — AI Announcer | 5.1, 5.2, 5.3 | ⬜ Not started |
-| 6 — Tutorial → vertical slice | 6.1 | ⬜ Not started |
-| 7–10 — Content, bosses, narrative, polish | — | ⬜ Not started |
+| 0 - Scaffold | 0.1, 0.3, 0.4 | Done |
+| 1 - Movement core | 1.1, 1.2, 1.3 | Done |
+| 2 - Arena, hazards, survival | 2.1, 2.2, 2.3, 2.4 | Done |
+| 3 - Combat + Suspicion | 3.1, 3.1b, 3.2, 3.3, 3.4 | Done |
+| 4 - Enemies | 4.1, 4.2 | Done |
+| 5 - AI Announcer | 5.1, 5.2, 5.3 | Done |
+| 6 - Tutorial -> vertical slice | 6.1, 6.2-6.6 controls/feel pass | Content complete; controls, instrumentation, acceptance, and tuning pending |
+| 7-10 - Content, bosses, narrative, polish | - | Do not start until Phase 6 feels right or Matt explicitly authorizes moving on |
 
 Run it: `npm install && npm run dev` → `http://localhost:5173`. Build it:
 `npm run build` (must be zero TypeScript errors under strict mode — this is

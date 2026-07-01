@@ -68,6 +68,34 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
 - [x] Both cron jobs (builder `f5e4b0dae651`, supervisor `edd7a15537da`) repointed to build against `main`
 - [x] `npm install` + `npm run build` re-verified green on `main`
 
+## Overnight Agent Queue — Controls + Feel First
+- [ ] **6.2 Fix mouse-look capture**
+  - [ ] Ensure normal browser/desktop play enters pointer lock reliably after an explicit canvas click.
+  - [ ] Keep embedded-browser cursor fallback, but do not let fallback be the main path when pointer lock is available.
+  - [ ] Add debug overlay readout for input mode: `pointer locked`, `cursor fallback`, or `inactive`.
+  - [ ] Verify: player can rotate 360 degrees left and right without the cursor hitting the screen edge.
+  - [ ] Verify: Esc exits capture cleanly; clicking the canvas re-enters capture; LMB still fires exactly once per accepted click.
+- [ ] **6.3 Add a non-PC-gamer control option**
+  - [ ] Add either keyboard turn controls, drag-to-look with recentering, or another explicit accessibility/control mode.
+  - [ ] Expose the mode in the Dev/Flight controls or a simple in-game toggle.
+  - [ ] Verify: a player can turn fully around, fly forward, ascend/descend, and fire without needing FPS-style pointer lock comfort.
+- [ ] **6.4 Add feel instrumentation**
+  - [ ] Show player position, speed, input mode, shot cooldown/accepted shot state, cover factor, current tutorial beat, last damage source, and hazard phase.
+  - [ ] Keep instrumentation unobtrusive and dev-facing; it can live in `DebugOverlay`.
+  - [ ] Verify: a developer agent can produce a pass/fail report without guessing from screenshots.
+- [ ] **6.5 Run Phase 6 acceptance and tune the loop**
+  - [ ] Pass/fail all 8 tutorial beacons in order.
+  - [ ] Pass/fail two hazard dodges minimum.
+  - [ ] Pass/fail Arena Guard and Security Drone encounters.
+  - [ ] Pass/fail safe fire vs open fire suspicion behavior, including warning/detected thresholds.
+  - [ ] Pass/fail damage feedback, checkpoint respawn, and exit reach.
+  - [ ] Tune movement acceleration/top speed, camera smoothing, hazard spacing/timing, enemy pressure, suspicion numbers, beacon placement, and bark timing based on the pass.
+- [ ] **6.6 Commit a build-ready handoff**
+  - [ ] Update `DEVELOPMENT_LOG.md`, `docs/TASKS.md`, `.hermes/build-state.md`, and README controls if behavior changes.
+  - [ ] Run `npm run typecheck` and `npm run build`.
+  - [ ] Browser-smoke-test the actual served app on a known clean port.
+  - [ ] Commit and push to `main` with the exact pass/fail summary.
+
 ## Phase 7+
 - [ ] Start only after Phase 6 loop has been play-tested and accepted, or Matt explicitly authorizes moving on with known tuning debt.
 - [ ] Content multiplication (enemies, arenas, pickups, difficulty)

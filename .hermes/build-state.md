@@ -4,7 +4,7 @@
 **Repo:** https://github.com/mattrob333/TheJester
 **Workspace:** `C:\Users\mrobe\TheJester`
 **Branch:** `main` (thejester-autopilot merged into main 2026-06-30; main is now GitHub's default branch and remote HEAD)
-**Status:** CONSOLIDATED — Phase 6 (ticket 6.1) content-complete, partially browser-smoke-tested, and cleaned up after recent pushes. Full one-session Phase 6 acceptance/play-feel pass is still the next gate before Phase 7 content work unless Matt explicitly authorizes moving ahead with known tuning debt.
+**Status:** HANDOFF READY — Phase 6 (ticket 6.1) content-complete, but controls/play-feel are the active blocker. Matt play-tested and reported that mouse-look feels cumbersome because cursor fallback hits the screen edge and cannot turn freely. Overnight agents should fix controls and instrumentation first, then run/tune Phase 6; do not start Phase 7 content yet.
 
 ## Architecture: Two-Tier Build Loop
 - Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
@@ -164,6 +164,9 @@ full teaching-beat sequence or combat/suspicion loop end-to-end.
 - Remaining non-blocking warnings: Three Clock/ShadowMap deprecations, one Vite initialization deprecation warning, and the expected large single bundle warning.
 
 ## Next Build Queue
-1. Complete a structured Phase 6 acceptance pass in `arena-01`: all 8 tutorial beacons, two hazard types minimum, Arena Guard, Security Drone, safe vs open fire suspicion behavior, warning/detected thresholds, damage feedback, checkpoint respawn, exit reach, and announcer responsiveness.
-2. If the pass exposes feel issues, tune before expanding: movement acceleration/top speed, hazard spacing/timing, enemy damage/ranges, suspicion thresholds/decay, beacon placement, and bark timing.
-3. After Phase 6 is accepted, start Phase 7 content multiplication in this order: remaining enemy archetypes, arena config expansion, pickups/medical stations, then boss/narrative wrappers.
+1. **6.2 Fix mouse-look capture:** pointer lock must be the normal desktop/browser path after an explicit canvas click, with debug readout for `pointer locked` / `cursor fallback` / `inactive`. Verify 360-degree turn both directions without screen-edge blockage, Esc release, re-click recapture, and one accepted shot per LMB click.
+2. **6.3 Add a non-PC-gamer control option:** keyboard turn, drag-to-look with recentering, or another explicit mode that lets a less FPS-comfortable player turn fully, fly, ascend/descend, and fire without fighting pointer-lock assumptions.
+3. **6.4 Add feel instrumentation:** player position, speed, input mode, shot cooldown/accepted shot state, cover factor, current tutorial beat, last damage source, and hazard phase in the dev/debug surface.
+4. **6.5 Run Phase 6 acceptance and tune:** all 8 beacons, at least 2 hazard dodges, Arena Guard, Security Drone, safe/open fire suspicion, thresholds, damage, checkpoint respawn, exit, and announcer responsiveness. Tune movement, camera, hazards, enemies, suspicion, beacon placement, and barks before expanding.
+5. **6.6 Commit/push handoff:** update docs/README controls, run `npm run typecheck` and `npm run build`, smoke-test the real served app on a clean port, commit and push to `main` with exact pass/fail notes.
+6. **Only after Phase 6 is accepted:** start Phase 7 content multiplication in this order: remaining enemy archetypes, arena config expansion, pickups/medical stations, then boss/narrative wrappers.
