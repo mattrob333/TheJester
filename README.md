@@ -11,8 +11,12 @@ currently contains:
   data-driven arena loader, three telegraphed hazard types, health/damage
   feedback, and checkpoint-based respawn.
 
-**No combat (firing), enemies, or the real suspicion mechanic yet** — see
-"What's stubbed for later tickets" below.
+- **Phase 3 combat + suspicion**: LMB firing, projectiles, soft lock-on,
+  smoke/siren cover, suspicion decay/thresholds, and lockdown response.
+- **Phase 4 enemies**: arena guard and security drone.
+- **Phase 5 announcer**: JSON-driven event barks and HUD captions.
+- **Phase 6 orientation tutorial beats**: movement, jetpack, hazards,
+  no-ammo gag, sirens, smoke, suspicion, and exit beacons.
 
 **Picking this project up?** Read **[`DEVELOPMENT_LOG.md`](./DEVELOPMENT_LOG.md)**
 first — it documents the architecture and gotchas behind everything built so
@@ -47,10 +51,14 @@ the debug overlay (top-left).
 
 ### Flight controls (follow camera mode — the default)
 
-- **Click the canvas** to engage pointer lock (mouse look).
+- **Click the canvas** to engage mouse look. Pointer lock is used when the
+  browser allows it; embedded browsers fall back to cursor movement over the
+  canvas.
 - **W / A / S / D** — move forward/back/strafe, relative to where you're looking.
 - **Mouse** — look (yaw + pitch); forward thrust follows pitch, so looking up
   and pressing W flies up.
+- **Left mouse button** — fire the hidden weapon.
+- **Right mouse button** — focus mouse look without firing.
 - **Space / Ctrl** — vertical thrust up/down.
 - **Shift** — boost (higher top speed).
 - No input → the jetpack **hovers** in place (gravity is zeroed; velocity is
@@ -82,11 +90,6 @@ the debug overlay (top-left).
   it never fights the dev camera controls for the mouse.
 - **`physics debug`** — draws Rapier collider wireframes (including hazard/
   checkpoint sensor volumes).
-- **`Test: emit shotFired`** — emits `shotFired {covered:false}` on the bus.
-  Watch the debug overlay log it **and** `suspicion` tick up by 12 (proves
-  bus → store wiring end-to-end). This button only works *before* you click
-  the canvas to engage pointer lock — once locked, the canvas captures all
-  clicks; press Esc to release pointer lock and reach the leva panel again.
 - **Flight → tuning** — live-tunable `maxSpeed`, `boostMultiplier`,
   `acceleration` (thrust response), `mouseSensitivity`.
 
@@ -179,17 +182,17 @@ public/
 
 ## What's stubbed for later tickets
 
-This repo implements the foundation, movement core, and arena/hazard/survival
-loop. Left for later:
+This repo implements the foundation through the current orientation tutorial
+slice: movement, hazards, survival, firing/projectiles, suspicion/cover,
+lockdown, two enemy types, announcer barks, and tutorial beacons. Left for
+later:
 
-- **Smoke zones / cover states** (3.2) — `smokeZones` parsed but not rendered.
-- **Firing / aiming** (3.x) — only the `shotFired` smoke-test button; no
-  projectiles, no real weapon.
-- **Real suspicion model** (3.3) — current `addSuspicion(12)` on uncovered shot
-  is a placeholder; see `// TODO(3.3)` in `gameState.ts`.
-- **Enemies** (4.x) — `enemies` parsed but not spawned.
-- **Announcer barks** (5.x) — `announcer` config carried but unused.
-- **Tutorial** (6), bosses, narrative, audio, final HUD.
+- **Enemy expansion** — Blade Bot, Riot Guard, Sniper, Turret, Jet Trooper.
+- **Arenas 2+ and pickups** — additional data-driven arenas, medical stations,
+  hidden health packs, and difficulty presets.
+- **Bosses and narrative wrappers** — rival, executioner, director, intro,
+  loading screen, and endings.
+- **Polish** — final HUD, audio, visual juice, performance work, and Easter eggs.
 
 The event map, store shape, arena schema, flight state, and asset pipeline are
 intentionally extensible so later systems bolt on without rework.

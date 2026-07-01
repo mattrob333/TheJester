@@ -1,4 +1,4 @@
-import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RigidBody, CapsuleCollider, type RapierRigidBody } from "@react-three/rapier";
 import { Euler, MathUtils, Quaternion, Vector3, type Mesh, type MeshStandardMaterial } from "three";
@@ -51,6 +51,37 @@ function CapsuleVisual() {
 function PlayerModel() {
   const { scene } = loadGltf(PLAYER_MODEL_URL);
   return <primitive object={scene} />;
+}
+
+function OptionalPlayerModel() {
+  const [modelAvailable, setModelAvailable] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(PLAYER_MODEL_URL, { method: "HEAD" })
+      .then((res) => {
+        if (cancelled) return;
+        const contentType = res.headers.get("content-type") ?? "";
+        setModelAvailable(res.ok && !contentType.includes("text/html"));
+      })
+      .catch(() => {
+        if (!cancelled) setModelAvailable(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!modelAvailable) return <CapsuleVisual />;
+
+  return (
+    <ModelBoundary fallback={<CapsuleVisual />}>
+      <Suspense fallback={<CapsuleVisual />}>
+        <PlayerModel />
+      </Suspense>
+    </ModelBoundary>
+  );
 }
 
 /** Falls back to children's fallback if the glb fails to load (e.g. 404). */
@@ -212,6 +243,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       if (input.fire) {
         muzzle.copy(flightState.position).addScaledVector(forward, 1.2).addScaledVector(up, 0.2);
         fireProjectile(muzzle, forward, { covered: false, targetId: lockOnState.targetId });
+        input.fire = false;
       }
 
       desired.set(0, 0, 0);
@@ -256,11 +288,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       angularDamping={1}
     >
       <CapsuleCollider args={[HALF_HEIGHT, RADIUS]} />
-      <ModelBoundary fallback={<CapsuleVisual />}>
-        <Suspense fallback={<CapsuleVisual />}>
-          <PlayerModel />
-        </Suspense>
-      </ModelBoundary>
+      <OptionalPlayerModel />
       <DamageFlash />
     </RigidBody>
   );
