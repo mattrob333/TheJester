@@ -4,7 +4,7 @@
 **Repo:** https://github.com/mattrob333/TheJester
 **Workspace:** `C:\Users\mrobe\TheJester`
 **Branch:** `main` (thejester-autopilot merged into main 2026-06-30; main is now GitHub's default branch and remote HEAD)
-**Status:** Phase 6 content-complete + input-robustness fix landed. Play-test blocker partially addressed (see below) — still open on the full qualitative done-when loop.
+**Status:** STOPPED — Phase 6 (ticket 6.1) content-complete, play-test-blocked; all safe non-Phase-7 forward work exhausted; no browser/computer-use tooling available to this session to run the done-when play-test. Both crons paused.
 
 ## Architecture: Two-Tier Build Loop
 - Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
@@ -133,4 +133,22 @@ full teaching-beat sequence or combat/suspicion loop end-to-end.
 
 - **Ticket 4.2 notes:** `SecurityDrone.tsx` subscribes to `bus.on("shotFired", ...)` directly (not through `suspicion.ts`) to add its own stacking suspicion bump — this is intentional per spec ("a second source ... stacking, not replacing"). The two listeners (this one + `suspicion.ts`'s) both fire on the same event independently; there's no shared "total suspicion this shot" computation, each just calls `addSuspicion` with its own amount and the store sums them. If a future ticket wants to scale the drone's bump by distance/exposure (e.g. closer = more suspicious) that's a clean follow-up — currently it's a flat 8 points whenever the player fires uncovered within sight range, with no falloff. Drone is fully stationary (hover-in-place) — no movement/patrol was specified for it, unlike the Arena Guard's patrol; if a future ticket wants drone movement, it's not blocking 4.2's done-when (drones fire at the player + firing unsafely within sight-line measurably increases suspicion beyond 3.3 alone — both implemented and build-verified).
 
-**Last Updated:** 2026-07-01 — Inner loop tick: shipped ticket 3.4 follow-up (announcer `lockdown_detected` bark on suspicion=detected, commit `426a301`), `npm run build` green (166 modules, zero TS errors). Audited `useFlightInput.ts` for edge-case follow-ups — none needed. No open corrections requiring action. No browser-automation tooling available; Phase 6/Ticket 6.1 remains play-test-pending, Phase 7 remains gated — neither declared done/started this tick.
+## This Tick (2026-07-01 third pass — STOP)
+- Overlap lock acquired cleanly (no stale lock present), released at end.
+- Reviewed `.hermes/course-corrections.md`: 1 OPEN item (storyProgress narrative-trigger decision) — correctly left OPEN per its own "no action needed now" text; not actionable by the inner loop. No other corrections.
+- `git pull origin main`: already up to date (`8a78a3b`), clean working tree, no orphaned work from a prior tick.
+- `npm run build`: green (166 modules, zero TS errors).
+- Audited codebase for remaining safe forward work: grepped `src/` for TODO/FIXME/deferred markers. Found only two remaining TODOs, both explicitly Phase 7-gated or product-decision-gated:
+  1. `lockdown.ts` — elite-guard/security-drone runtime spawn on detection, requires a runtime enemy-spawn API that doesn't exist (architecturally significant, out of single-tick scope, Phase 7+ per its own comment).
+  2. `suspicion.ts` — "section clears weaponless" decay bonus, requires an undefined arena-"section" concept/product decision (explicitly flagged as needing a decision, not invented).
+- No other unblocked spec-deferred work found (the two items from the prior two ticks — hazard-kill suspicion decay bonus, lockdown announcer bark — are both shipped).
+- No browser-automation/computer-use tooling available in this session — did NOT attempt or fabricate a Phase 6 play-test, did NOT declare Ticket 6.1/Phase 6 done, did NOT start Phase 7 content.
+- **Conclusion: all safe/available work is exhausted.** Stop condition (a) met: gate green, no open (actionable) corrections, Phase 6 genuinely play-test-blocked with no tooling to resolve it, and no further safe forward-work items remain that don't require either a product decision or Phase 7 authorization. Pausing both crons per protocol.
+
+## Next Action (for whoever resumes — human or future tooling-equipped tick)
+1. **Play-test arena-01** manually or via a future tick with browser-automation/computer-use tooling: exercise all 8 tutorial beats, both enemy types (Arena Guard + Security Drone), siren/smoke cover mechanics, suspicion threshold behavior, checkpoint/respawn, and the exit — per `DEVELOPMENT_LOG.md` lines ~615-623. Report pass/fail per beat plus the qualitative "is this fun" pacing check.
+2. Once play-test passes (or Matt explicitly authorizes proceeding on code-review confidence alone), mark Ticket 6.1 / Phase 6 done in `docs/TASKS.md` and `.hermes/build-state.md`, then unpause the crons to begin Phase 7 (7.1 remaining enemies, 7.2 arenas 2-N via config).
+3. If a narrative-trigger decision is made for `storyProgress` advancement (the OPEN course-correction), implement the trigger and resolve that correction.
+4. To resume the automated loop: `cronjob action=resume job_id="f5e4b0dae651"` and `cronjob action=resume job_id="edd7a15537da"`.
+
+**Last Updated:** 2026-07-01 (third pass) — Inner loop STOPPED per protocol: build green, no actionable corrections, no unblocked safe work remains, Phase 6 play-test blocker persists with no tooling available. Both crons paused (`f5e4b0dae651`, `edd7a15537da`). Awaiting human play-test or authorization to proceed.
