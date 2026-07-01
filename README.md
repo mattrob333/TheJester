@@ -55,8 +55,8 @@ the debug overlay (top-left).
   browser allows it; embedded browsers fall back to cursor movement over the
   canvas.
 - **W / A / S / D** — move forward/back/strafe, relative to where you're looking.
-- **Mouse** — look (yaw + pitch); forward thrust follows pitch, so looking up
-  and pressing W flies up.
+- **Mouse** — look (yaw + pitch). W/S move forward/back on the horizontal
+  plane; use Space/Ctrl for vertical thrust.
 - **Left mouse button** — fire the hidden weapon.
 - **Right mouse button** — focus mouse look without firing.
 - **Space / Ctrl** — vertical thrust up/down.

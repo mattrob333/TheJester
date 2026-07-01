@@ -194,6 +194,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
   const yawEuler = useMemo(() => new Euler(0, 0, 0, "YXZ"), []);
   const yawQuat = useMemo(() => new Quaternion(), []);
   const forward = useMemo(() => new Vector3(), []);
+  const moveForward = useMemo(() => new Vector3(), []);
   const right = useMemo(() => new Vector3(), []);
   const desired = useMemo(() => new Vector3(), []);
   const currentVel = useMemo(() => new Vector3(), []);
@@ -278,12 +279,12 @@ export function Player({ flightState, settings, active }: PlayerProps) {
         (keys.has("ControlLeft") || keys.has("ControlRight") ? 1 : 0);
       const boosting = keys.has("ShiftLeft") || keys.has("ShiftRight");
 
-      // Forward thrust follows full look direction (pitch included) — looking
-      // up and pressing W flies up, true jetpack flight. Strafe stays flat
-      // (yaw-only) so it doesn't tilt with the camera.
+      // Aim uses pitch, but WASD movement stays horizontal. Space/Ctrl are
+      // the vertical controls, which keeps backing up from climbing/diving.
       lookEuler.set(flightState.pitch, flightState.yaw, 0);
       forward.set(0, 0, -1).applyEuler(lookEuler);
       yawEuler.set(0, flightState.yaw, 0);
+      moveForward.set(0, 0, -1).applyEuler(yawEuler);
       right.set(1, 0, 0).applyEuler(yawEuler);
 
       // Ticket 3.1b — soft lock-on: re-acquire the nearest valid target in
@@ -303,7 +304,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       }
 
       desired.set(0, 0, 0);
-      if (fwdIn !== 0) desired.addScaledVector(forward, fwdIn);
+      if (fwdIn !== 0) desired.addScaledVector(moveForward, fwdIn);
       if (strafeIn !== 0) desired.addScaledVector(right, strafeIn);
       if (desired.lengthSq() > 1) desired.normalize();
       desired.y += vertIn;

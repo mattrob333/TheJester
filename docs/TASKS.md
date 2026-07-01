@@ -89,6 +89,7 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] "Hazard phase" readout: each cyclic hazard (crusher/laser) writes `telemetry.hazardPhase = "<type>:<phase>"` while the player overlaps its sensor, clearing to `null` on exit; razor (always-armed, no phase cycle) writes `"razor:active"` while overlapped. `DebugOverlay.tsx` shows a `hazard phase` row.
   - [x] Verify: `npm run build` green (zero TS errors, 166 modules) after wiring all 4 hazard/enemy emit sites + telemetry fields + DebugOverlay rows. Full interactive play-test verification of the readouts' *correctness in motion* still pending the same play-test-tooling gap as Phase 6 overall — the instrumentation itself is code-complete and build-verified.
 - [ ] **6.5 Run Phase 6 acceptance and tune the loop**
+  - [x] Fix 2026-07-01 playtest bug: W/S now move horizontally relative to yaw instead of following pitch, so backing up no longer climbs/dives when looking up/down. Space/Ctrl own vertical thrust.
   - [ ] Pass/fail all 8 tutorial beacons in order.
   - [ ] Pass/fail two hazard dodges minimum.
   - [ ] Pass/fail Arena Guard and Security Drone encounters.
