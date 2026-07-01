@@ -4,7 +4,7 @@
 **Repo:** https://github.com/mattrob333/TheJester
 **Workspace:** `C:\Users\mrobe\TheJester`
 **Branch:** `thejester-autopilot`
-**Status:** Phase 5 complete (AI Announcer) — next Phase 6 (Tutorial → vertical slice)
+**Status:** STOPPED — Ticket 6.1 content composition complete (all 8 teaching beats shipped, build green); blocked on human/interactive play-test of the Phase 6 done-when loop, which the inner loop has no tooling to perform. Phase 7 is explicitly spec-gated on that play-test happening first ("if the loop above is fun... don't push forward into Phase 7 on a loop that doesn't feel good yet"). Resuming requires a user/supervisor decision: either (a) play-test the build and report back / fix any feel issues found, or (b) explicitly waive the play-test and authorize starting Phase 7 on code-review confidence alone.
 
 ## Architecture: Two-Tier Build Loop
 - Inner Loop (cron `f5e4b0dae651`) — every 10m: Check -> Test -> Advance -> Repeat. Self-pauses both crons at a genuine stopping point.
@@ -27,7 +27,7 @@
    - 5.1 ✅ (a0ab585)
    - 5.2 ✅ (0ca0c9a)
    - 5.3 ✅ (satisfied by 5.1's caption work — see notes below, no separate commit)
-6. [ ] Phase 6 — Tutorial → vertical slice (ticket 6.1, in progress — sub-slice 3 of N shipped)
+6. [ ] Phase 6 — Tutorial → vertical slice (ticket 6.1, content composition complete — all 8 teaching beats shipped, play-test verification pending)
 7. [ ] Phase 7+ — Content, bosses, narrative, polish
 
 ## Completed Tasks
@@ -55,19 +55,34 @@
 
 - **Ticket 6.1 sub-slice 3 — Tutorial beacon: no-ammo gag beat** (d1eca74): added one `TutorialBeacon` at `[12, 2, 0]` (`tut_no_ammo` bark id) — placed just past the razor hazard (x=10), before the crusher (x=18), delivering the flavor/narrative gag that the weapon never needs reloading. No game-design source doc was available to verify the exact framing, so per the spec's own fallback instruction this was treated as "the weapon never needs reloading and the announcer makes a dry joke about it" and shipped without blocking on missing documentation. Believer + ally tier lines added to `lines.json`. Pure content composition: zero new engine code. This is teaching beat 4 of 8 (movement ✅ → jetpack ✅ → hazards ✅ → **no-ammo gag ✅** → sirens → smoke → suspicion → exit). Verified via `npm run build` (zero TS errors); manual play-test not yet exercised — same flag as prior sub-slices.
 
+- **Ticket 6.1 sub-slice 4 — Tutorial beacon: sirens beat** (e96432d): added one `TutorialBeacon` at `[15, 2, 0]` (`tut_sirens` bark id) — placed between the no-ammo beacon (x=12) and the smoke zone (x=20), reminding the player that the razor hazard at x=10 has `siren: true` and that firing under a siren earns the ×0.1 cover-factor multiplier from 3.3's suspicion math. Believer-tier line only (no doubter/ally override needed — content is mechanical instruction, not narrative tone-dependent enough to warrant per-tier variation beyond what's already established). Pure content composition: zero new engine code. Teaching beat 5 of 8. Verified via `npm run build` (zero TS errors); manual play-test not yet exercised.
+
+- **Ticket 6.1 sub-slice 5 — Tutorial beacon: smoke beat** (0431bb2): added one `TutorialBeacon` at `[16.5, 2, 0]` (`tut_smoke` bark id) — placed just before the existing smoke zone at x=20 (rendered since 3.2's `SmokeZone.tsx`), teaching the player that firing from inside smoke earns the ×0.15 cover multiplier (and ×0.0–0.05 combined with a siren). Believer-tier only. Pure content composition. Teaching beat 6 of 8. Verified via `npm run build` (zero TS errors); manual play-test not yet exercised.
+
+- **Ticket 6.1 sub-slices 6+7 — Tutorial beacons: suspicion + exit beats** (92aa73f): added `TutorialBeacon` at `[22, 2, 0]` (`tut_suspicion`, just past the checkpoint at x=20, ahead of the Security Drone at x=24/laser at x=28) reinforcing the general suspicion-meter mechanic (spam-surcharge + decay, from 3.3), and `TutorialBeacon` at `[36, 2, 0]` (`tut_exit`, just past the target dummy at x=34, before the exit at x=40) calling out the finish line. Both believer-tier only. Pure content composition: zero new engine code. **This completes all 8 teaching beats of Ticket 6.1** (movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit) — the full arena-01.json now contains every beacon, both enemy types, all 3 hazard types, the smoke zone, 2 checkpoints, the dummy, and the exit, matching the DEVELOPMENT_LOG.md 6.1 spec's content list. Verified via `npm run build` (zero TS errors) after each sub-slice. **Not yet done:** an actual interactive play-test of the full done-when loop (DEVELOPMENT_LOG.md lines 615-623) — this inner-loop session has no browser-automation/play-test tooling available, so beat timing, pacing, and the "is this fun" qualitative check (explicitly called out in the spec as more important than "the code compiles") have not been exercised. Flagging this as the next action rather than declaring Phase 6 done.
+
 ## Open Issues / Blockers
 - **Narrative-beat decision needed (flagged, not invented, per spec instruction in DEVELOPMENT_LOG.md 5.2):** which gameplay events should advance `storyProgress` forward (believer → doubter → ally) is an explicit product/narrative decision the spec says not to guess. `setStory(...)` exists and is wired end-to-end (announcer correctly swaps line sets per tier, verified 5.2), but nothing currently calls it during gameplay — it's only reachable via manual/dev invocation (e.g. console). This does not block Phase 6 (tutorial only needs the believer-tier default) but will need a decision before any late-game arena is meant to demonstrate the ally-tier lines for real. Raised as a course-correction in `.hermes/course-corrections.md` for supervisor/user visibility.
 
 ## Next Action
-Continue Phase 6, **Ticket 6.1 (Orientation arena)**, sub-slice 4: add the "sirens" teaching
-beat — a beacon near/just after the razor hazard's siren trigger zone (the razor at x=10 already
-has `siren: true`) calling out that the siren means cover/lower visibility, then continue in
-order: smoke, suspicion, exit. Each beat = one TutorialBeacon placement + one bark line (reuse
-the system shipped in sub-slice 1 — no new engine code needed unless a genuine gap surfaces).
-Read `DEVELOPMENT_LOG.md` lines ~589-631 for the full done-when criteria; the milestone isn't
-complete until a player can do the full loop described there in one session (movement → jetpack
-→ hazards → no-ammo gag → sirens → smoke → suspicion → exit, encountering both enemies, taking
-damage, respawning at a checkpoint, reaching the exit).
+All 8 teaching beats of Ticket 6.1 are now content-complete in `arena-01.json`
+(movement → jetpack → hazards → no-ammo gag → sirens → smoke → suspicion → exit).
+The remaining work to close Phase 6 is the **done-when verification itself**:
+an actual interactive play-test of the full loop described in
+`DEVELOPMENT_LOG.md` lines ~615-623 (fly/dodge ≥2 hazard types, encounter both
+Arena Guard + Security Drone, fire only safely with suspicion behaving as
+spec'd, take damage with visible suit wear, respawn at a checkpoint, reach the
+exit, announcer reacting throughout) — this requires either a human play
+session or browser-automation tooling neither of which this inner-loop tick
+has access to. Until that verification happens (or the user/supervisor
+explicitly waives it and declares the milestone met on code-review alone),
+treat Ticket 6.1's final checkbox as open. If a future tick gains
+browser/computer-use tooling, that is the natural next action; otherwise this
+is a flag for the user/outer-loop supervisor rather than further inner-loop
+code work — there is no more "next vertical slice" of code to write for 6.1
+without inventing untested content. Do not start Phase 7 (explicitly gated on
+"the loop has been played and feels good — not just the code compiles") until
+this verification is resolved one way or another.
 
 ## Pitfalls / Notes for Future Ticks
 - `npm run build` must pass with zero TS errors (strict mode).
@@ -84,4 +99,4 @@ damage, respawning at a checkpoint, reaching the exit).
 
 - **Ticket 4.2 notes:** `SecurityDrone.tsx` subscribes to `bus.on("shotFired", ...)` directly (not through `suspicion.ts`) to add its own stacking suspicion bump — this is intentional per spec ("a second source ... stacking, not replacing"). The two listeners (this one + `suspicion.ts`'s) both fire on the same event independently; there's no shared "total suspicion this shot" computation, each just calls `addSuspicion` with its own amount and the store sums them. If a future ticket wants to scale the drone's bump by distance/exposure (e.g. closer = more suspicious) that's a clean follow-up — currently it's a flat 8 points whenever the player fires uncovered within sight range, with no falloff. Drone is fully stationary (hover-in-place) — no movement/patrol was specified for it, unlike the Arena Guard's patrol; if a future ticket wants drone movement, it's not blocking 4.2's done-when (drones fire at the player + firing unsafely within sight-line measurably increases suspicion beyond 3.3 alone — both implemented and build-verified).
 
-**Last Updated:** 2026-06-30 — Ticket 6.1 sub-slice 3 shipped (Tutorial beacon no-ammo gag beat, commit d1eca74). Phase 6 in progress (sub-slice 3 of N). Next: 6.1 sub-slice 4 (sirens beat).
+**Last Updated:** 2026-06-30 — Ticket 6.1 all 8 teaching beats shipped (sub-slices 4-7: sirens e96432d, smoke 0431bb2, suspicion+exit 92aa73f). Content composition for Phase 6 is complete; interactive play-test verification of the done-when loop is the next action, flagged for supervisor/user since the inner loop has no play-test tooling.

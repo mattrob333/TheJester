@@ -53,11 +53,11 @@ Source of truth for the autonomous build loop. Derived from [`DEVELOPMENT_LOG.md
   - [x] Beat 2: jetpack (beacon at x=6, `tut_jetpack`)
   - [x] Beat 3: hazards (beacon at x=8.5, `tut_hazards`)
   - [x] Beat 4: "no ammunition" weapon gag (beacon at x=12, `tut_no_ammo`)
-  - [ ] Beat 5: sirens
-  - [ ] Beat 6: smoke
-  - [ ] Beat 7: suspicion
-  - [ ] Beat 8: exit
-  - [ ] Verify: full done-when loop in one session (DEVELOPMENT_LOG.md lines ~615-623)
+  - [x] Beat 5: sirens (beacon at x=15, `tut_sirens`)
+  - [x] Beat 6: smoke (beacon at x=16.5, `tut_smoke`)
+  - [x] Beat 7: suspicion (beacon at x=22, `tut_suspicion`)
+  - [x] Beat 8: exit (beacon at x=36, `tut_exit`)
+  - [ ] Verify: full done-when loop in one session (DEVELOPMENT_LOG.md lines ~615-623) — content composition complete (all 8 beats, both enemies, checkpoint/respawn, exit all present in arena-01.json); a real interactive play-test pass has not yet been exercised by the inner loop (no browser-automation tooling available this session) — flag for next supervisor/outer-loop audit or a manual session.
 
 ## Phase 7+
 - [ ] Content multiplication (enemies, arenas, pickups, difficulty)
