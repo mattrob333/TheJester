@@ -7,7 +7,8 @@ export interface Targetable {
   position: Vector3;
   radius: number;
   owner: TargetOwner;
-  onHit: () => void;
+  /** Called when a projectile connects; `damage` comes from the projectile. */
+  onHit: (damage: number) => void;
 }
 
 /**

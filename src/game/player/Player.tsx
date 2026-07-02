@@ -13,6 +13,9 @@ import { fireProjectile } from "../combat/useWeapon";
 import { findNearestTarget } from "../combat/targeting";
 import { lockOnState } from "../combat/lockOn";
 import { playerTracking } from "./playerTracking";
+import { registerTarget, unregisterTarget, type Targetable } from "../combat/targets";
+import { addTrauma, spawnMuzzleLight } from "../effects/effects";
+import { JesterModel, createJesterAnim, type JesterAnim } from "./JesterModel";
 
 /**
  * Jetpack flight controller (Ticket 1.1).
@@ -24,15 +27,18 @@ import { playerTracking } from "./playerTracking";
  * the capsule; we still drive yaw ourselves via `setRotation`.
  *
  * Asset slot: if `public/models/player.glb` exists it is loaded via the
- * `loadGltf` pipeline helper and rendered in place of the capsule; otherwise
- * we fall back to the primitive capsule below.
+ * `loadGltf` pipeline helper and rendered in place of the built-in procedural
+ * Jester character; otherwise `JesterModel` (a fully articulated primitive
+ * rig) is the default visual.
  */
 
 const PLAYER_MODEL_URL = "/models/player.glb";
 
-// Capsule dimensions shared by the visual mesh and the physics collider.
+// Capsule dimensions shared by the physics collider and the damage halo.
 const RADIUS = 0.5;
 const HALF_HEIGHT = 0.6; // cylinder half-height (excludes the two caps)
+/** Hit-sphere radius for enemy projectiles (slightly generous — dodging should feel earned, not pixel-perfect). */
+const PLAYER_TARGET_RADIUS = 0.8;
 
 const PITCH_LIMIT = MathUtils.degToRad(85);
 /**
@@ -54,21 +60,14 @@ const KEY_TURN_SCALE = 2.5;
 const LOCK_ON_MAX_RANGE = 50; // meters
 const LOCK_ON_CONE_ANGLE = MathUtils.degToRad(25); // half-angle
 
-function CapsuleVisual() {
-  return (
-    <mesh castShadow position={[0, 0, 0]}>
-      <capsuleGeometry args={[RADIUS, HALF_HEIGHT * 2, 8, 16]} />
-      <meshStandardMaterial color="#c026d3" roughness={0.4} metalness={0.1} />
-    </mesh>
-  );
-}
+const MUZZLE_FLASH_COLOR = 0xffc93d;
 
-function PlayerModel() {
+function PlayerGlbModel() {
   const { scene } = loadGltf(PLAYER_MODEL_URL);
   return <primitive object={scene} />;
 }
 
-function OptionalPlayerModel() {
+function OptionalPlayerModel({ anim }: { anim: JesterAnim }) {
   const [modelAvailable, setModelAvailable] = useState(false);
 
   useEffect(() => {
@@ -88,12 +87,12 @@ function OptionalPlayerModel() {
     };
   }, []);
 
-  if (!modelAvailable) return <CapsuleVisual />;
+  if (!modelAvailable) return <JesterModel anim={anim} />;
 
   return (
-    <ModelBoundary fallback={<CapsuleVisual />}>
-      <Suspense fallback={<CapsuleVisual />}>
-        <PlayerModel />
+    <ModelBoundary fallback={<JesterModel anim={anim} />}>
+      <Suspense fallback={<JesterModel anim={anim} />}>
+        <PlayerGlbModel />
       </Suspense>
     </ModelBoundary>
   );
@@ -118,8 +117,9 @@ const FLASH_DURATION = 0.25; // seconds
 /**
  * "Suit damage" feedback (Ticket 2.3): a translucent red halo around the
  * player that flashes briefly on `playerDamaged`. Implemented as a sibling
- * overlay rather than recoloring the capsule/glb material directly, so it
- * works the same whether the placeholder capsule or a real model is active.
+ * overlay rather than recoloring the model materials directly, so it works
+ * the same whether the procedural Jester or a glb model is active. Also
+ * kicks the camera-shake trauma so hits land physically.
  */
 function DamageFlash() {
   const ref = useRef<Mesh>(null);
@@ -130,6 +130,7 @@ function DamageFlash() {
     const handler = (payload: { amount: number; source: string }) => {
       pending.current = true;
       telemetry.lastDamageSource = payload.source;
+      addTrauma(Math.min(0.6, 0.15 + payload.amount * 0.012));
     };
     bus.on("playerDamaged", handler);
     return () => bus.off("playerDamaged", handler);
@@ -177,9 +178,9 @@ interface PlayerProps {
   flightState: FlightState;
   settings: FlightSettings;
   /**
-   * Gameplay flight is only active in "follow" camera mode (see Game.tsx) —
-   * keeps pointer-lock mouse-look from fighting OrbitControls/FlyControls
-   * when a dev is just inspecting the scene.
+   * Gameplay flight is only active in "follow" camera mode while the app is
+   * in the "playing" phase (see Game.tsx) — keeps pointer-lock mouse-look
+   * from fighting the title screen and the dev cameras.
    */
   active: boolean;
 }
@@ -188,6 +189,27 @@ export function Player({ flightState, settings, active }: PlayerProps) {
   const { gl } = useThree();
   const bodyRef = useRef<RapierRigidBody>(null);
   const input = useFlightInput(active ? gl.domElement : null);
+  const anim = useMemo(() => createJesterAnim(), []);
+
+  // Enemy projectiles need something to hit — register the player in the
+  // shared target registry. `flightState.position` is the live per-frame
+  // Vector3, so the registry entry tracks automatically.
+  useEffect(() => {
+    const playerTarget: Targetable = {
+      id: "player",
+      position: flightState.position,
+      radius: PLAYER_TARGET_RADIUS,
+      owner: "player",
+      onHit: (damage) => {
+        const gs = useGameState.getState();
+        if (gs.health <= 0) return;
+        gs.damage(damage);
+        bus.emit("playerDamaged", { amount: damage, source: "drone-laser" });
+      },
+    };
+    registerTarget(playerTarget);
+    return () => unregisterTarget(playerTarget);
+  }, [flightState]);
 
   // Scratch objects reused every frame to avoid per-frame GC churn.
   const lookEuler = useMemo(() => new Euler(0, 0, 0, "YXZ"), []);
@@ -202,7 +224,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
   const muzzle = useMemo(() => new Vector3(), []);
   const up = useMemo(() => new Vector3(0, 1, 0), []);
 
-  useFrame((_, dt) => {
+  useFrame((frame, dt) => {
     const body = bodyRef.current;
     if (!body) return;
 
@@ -297,9 +319,18 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       });
       lockOnState.targetId = lockedTarget?.id ?? null;
 
-      if (input.fire) {
+      // Hold-to-fire: `fire` is the one-shot click edge, `fireHeld` streams
+      // shots while the trigger stays down (cooldown-gated in useWeapon).
+      if (input.fire || input.fireHeld) {
         muzzle.copy(flightState.position).addScaledVector(forward, 1.2).addScaledVector(up, 0.2);
-        fireProjectile(muzzle, forward, { covered: isCovered(), targetId: lockOnState.targetId });
+        const fired = fireProjectile(muzzle, forward, {
+          covered: isCovered(),
+          targetId: lockOnState.targetId,
+        });
+        if (fired) {
+          anim.lastFireAt = frame.clock.elapsedTime;
+          spawnMuzzleLight(muzzle, MUZZLE_FLASH_COLOR);
+        }
         input.fire = false;
       }
 
@@ -320,8 +351,24 @@ export function Player({ flightState, settings, active }: PlayerProps) {
 
       body.setLinvel(currentVel, true);
       body.setRotation(yawQuat.setFromEuler(yawEuler), true);
+
+      // Feed the character rig: local-space velocity (for banking/leaning),
+      // thrust fraction (flame length), boost, and aim pitch.
+      anim.localVel.copy(currentVel).applyAxisAngle(up, -flightState.yaw);
+      anim.thrust = MathUtils.clamp(
+        currentVel.length() / (settings.maxSpeed * settings.boostMultiplier),
+        0,
+        1,
+      );
+      anim.boosting = boosting && currentVel.lengthSq() > 1;
+      anim.pitch = flightState.pitch;
+      flightState.boosting = anim.boosting;
     } else {
       body.setLinvel(zero, true);
+      anim.localVel.set(0, 0, 0);
+      anim.thrust = 0;
+      anim.boosting = false;
+      flightState.boosting = false;
     }
 
     const p = body.translation();
@@ -345,7 +392,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       angularDamping={1}
     >
       <CapsuleCollider args={[HALF_HEIGHT, RADIUS]} />
-      <OptionalPlayerModel />
+      <OptionalPlayerModel anim={anim} />
       <DamageFlash />
     </RigidBody>
   );

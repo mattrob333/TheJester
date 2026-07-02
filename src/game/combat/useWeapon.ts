@@ -14,18 +14,28 @@ export interface ProjectileDescriptor {
   maxRange: number;
   owner: ProjectileOwner;
   covered: boolean;
+  /** Damage dealt to whatever this projectile hits. */
+  damage: number;
   /** Ticket 3.1b — soft lock-on target id. When set, the projectile homes toward this target each frame instead of flying straight. */
   targetId: string | null;
 }
 
-export const FIRE_COOLDOWN = 0.25; // seconds
-const PROJECTILE_SPEED = 45; // m/s
+export const FIRE_COOLDOWN = 0.16; // seconds (player); enemies pace themselves
+const PROJECTILE_SPEED = 55; // m/s
 const MAX_LIFETIME = 1.5; // seconds
-const MAX_RANGE = 60; // meters
+const MAX_RANGE = 70; // meters
+const PLAYER_DAMAGE = 6;
+const ENEMY_DAMAGE = 8;
 
 const state = {
   projectiles: [] as ProjectileDescriptor[],
-  lastFire: -Infinity,
+  /**
+   * Per-owner cooldown stamps. These MUST be separate: with a single shared
+   * stamp, an enemy firing would silently gate the player's next shot (and
+   * vice versa) — an actual bug in the original single-`lastFire` version.
+   */
+  lastFire: -Infinity, // player (name kept for the debug overlay readout)
+  lastEnemyFire: -Infinity,
 };
 
 /**
@@ -38,7 +48,7 @@ export function useWeapon() {
 
 /**
  * Attempt to fire a projectile. Returns true if a shot was spawned (i.e. the
- * cooldown had elapsed). Emits `shotFired` for gameplay observers.
+ * owner's cooldown had elapsed). Emits `shotFired` for gameplay observers.
  */
 export function fireProjectile(
   origin: Vector3,
@@ -46,12 +56,17 @@ export function fireProjectile(
   options: { covered?: boolean; owner?: ProjectileOwner; targetId?: string | null } = {},
 ): boolean {
   const now = performance.now() / 1000;
-  if (now - state.lastFire < FIRE_COOLDOWN) return false;
+  const owner = options.owner ?? "player";
 
-  state.lastFire = now;
+  if (owner === "player") {
+    if (now - state.lastFire < FIRE_COOLDOWN) return false;
+    state.lastFire = now;
+  } else {
+    if (now - state.lastEnemyFire < 0.05) return false;
+    state.lastEnemyFire = now;
+  }
 
   const covered = options.covered ?? false;
-  const owner = options.owner ?? "player";
   bus.emit("shotFired", { covered, owner });
 
   state.projectiles.push({
@@ -65,6 +80,7 @@ export function fireProjectile(
     maxRange: MAX_RANGE,
     owner,
     covered,
+    damage: owner === "player" ? PLAYER_DAMAGE : ENEMY_DAMAGE,
     targetId: options.targetId ?? null,
   });
 

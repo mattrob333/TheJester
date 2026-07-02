@@ -30,6 +30,12 @@ export interface FlightInputState {
   mouseDY: number;
   /** One queued left-click shot request for the gameplay loop to consume. */
   fire: boolean;
+  /**
+   * True while the left mouse button is held — the weapon system polls this
+   * every frame for automatic fire (cooldown-gated in useWeapon), so holding
+   * the trigger streams shots instead of requiring click spam.
+   */
+  fireHeld: boolean;
   locked: boolean;
   /** Browser fallback when pointer lock is denied or unavailable. */
   cursorLook: boolean;
@@ -81,6 +87,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     mouseDX: 0,
     mouseDY: 0,
     fire: false,
+    fireHeld: false,
     locked: false,
     cursorLook: false,
     dragActive: false,
@@ -117,6 +124,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       if (e.code === "Escape" && !state.locked) {
         state.cursorLook = false;
         state.fire = false;
+        state.fireHeld = false;
         state.dragActive = false;
         state.dragTurnX = 0;
         state.dragTurnY = 0;
@@ -148,6 +156,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       if (e.button === 0) {
         e.preventDefault();
         state.fire = true;
+        state.fireHeld = true;
         state.cursorLook = true;
       }
       if (e.button === 2) {
@@ -162,7 +171,8 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
         state.dragTurnY = 0;
       }
     };
-    const onMouseUp = () => {
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 0) state.fireHeld = false;
       state.dragActive = false;
       state.dragTurnX = 0;
       state.dragTurnY = 0;
@@ -180,7 +190,10 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     const onLockChange = () => {
       state.locked = document.pointerLockElement === domElement;
       state.cursorLook = state.locked || state.cursorLook;
-      if (!state.locked) state.fire = false;
+      if (!state.locked) {
+        state.fire = false;
+        state.fireHeld = false;
+      }
       if (state.locked) {
         state.dragActive = false;
         state.dragTurnX = 0;
@@ -198,6 +211,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
     const onBlur = () => {
       state.keys.clear();
       state.fire = false;
+      state.fireHeld = false;
       state.dragActive = false;
       state.dragTurnX = 0;
       state.dragTurnY = 0;
@@ -227,6 +241,7 @@ export function useFlightInput(domElement: HTMLElement | null): FlightInputState
       window.removeEventListener("blur", onBlur);
       state.keys.clear();
       state.fire = false;
+      state.fireHeld = false;
       state.cursorLook = false;
       state.dragActive = false;
       state.dragTurnX = 0;

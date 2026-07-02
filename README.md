@@ -44,10 +44,15 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-You should see: a data-driven arena (lit grid floor, walls, three hazards, two
-checkpoint beacons, green spawn / red exit markers), a magenta placeholder
-player capsule, a third-person follow camera, the leva panel (top-right), and
-the debug overlay (top-left).
+You should see: an animated **title screen** over a slow cinematic flyover of
+the arena, then (after "ENTER THE ARENA" and a themed loading screen) the
+game itself — a neon industrial arena (metal deck, glowing trim, starfield),
+the procedural **Jester** character (three-point belled hat, glowing grin,
+twin-flame jetpack, SMG that aims with your look pitch), an armored patrol
+guard, a quad-rotor security drone, three rebuilt hazards, checkpoint
+holo-pillars, a spawn pad, and a spinning exit portal. Bloom + vignette
+post-processing ties it together. Dev tooling (leva panel, FPS stats, debug
+overlay) is hidden by default — press **`** (backquote) to toggle it.
 
 ### Flight controls (follow camera mode — the default)
 
@@ -57,7 +62,8 @@ the debug overlay (top-left).
 - **W / A / S / D** — move forward/back/strafe, relative to where you're looking.
 - **Mouse** — look (yaw + pitch). W/S move forward/back on the horizontal
   plane; use Space/Ctrl for vertical thrust.
-- **Left mouse button** — fire the hidden weapon.
+- **Left mouse button** — fire the hidden weapon. **Hold to auto-fire**
+  (cooldown-gated); tracers, muzzle flash, and impact sparks included.
 - **Right mouse button** — focus mouse look without firing.
 - **Space / Ctrl** — vertical thrust up/down.
 - **Shift** — boost (higher top speed).
@@ -69,6 +75,7 @@ the debug overlay (top-left).
   mouse required. Works independently of pointer-lock/drag-to-look state —
   toggle back with T to return to mouse-look. Current mode is shown in the
   debug overlay's `control mode` row.
+- **`** (backquote) — toggle dev tooling (leva panel, FPS stats, debug overlay).
 
 ### Arena 1 — Orientation
 
@@ -88,7 +95,19 @@ the debug overlay (top-left).
 - A red vignette flashes on screen and a translucent halo flashes around the
   player on every hit (Ticket 2.3 "suit damage" feedback).
 
-### Dev controls (leva panel)
+### Combat & feedback
+
+- Enemy projectiles now actually hit the player (the player registers in the
+  shared target registry), and fire cooldowns are tracked **per owner** so
+  drones can't silently eat the player's shots.
+- Projectiles deal scaled damage (player bolts 6, drone lasers 8) instead of
+  1-per-hit, spark on world geometry, and enemies explode on death.
+- Camera juice: trauma-based screen shake on hits/explosions and an FOV kick
+  with speed/boost.
+- HUD: hull bar, suspicion meter, crosshair, and speed readout (hidden on the
+  title/loading screens).
+
+### Dev controls (leva panel — press ` to show)
 
 - **`camera mode`** — `follow` (gameplay, above) / `orbit` (drei OrbitControls)
   / `freeFly` (drei FlyControls). Flight input is only live in `follow` mode so

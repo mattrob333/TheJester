@@ -17,6 +17,27 @@
         font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
         color: #e6e6ff;
       }
+
+      /* Title/loading screen animations (components reference these by name). */
+      @keyframes jester-title-in {
+        from {
+          opacity: 0;
+          transform: translateY(26px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes jester-bob {
+        0%,
+        100% {
+          transform: translateY(0) rotate(-2deg);
+        }
+        50% {
+          transform: translateY(-8px) rotate(2deg);
+        }
+      }
     </style>
   </head>
   <body>

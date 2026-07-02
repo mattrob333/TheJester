@@ -1,9 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, FlyControls, Stats } from "@react-three/drei";
+import { OrbitControls, FlyControls, Stats, Stars, Sparkles, Environment, Lightformer } from "@react-three/drei";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
 import { useControls, folder } from "leva";
+import { Vector3 } from "three";
 import { useGameState } from "./systems/gameState";
+import { useAppState } from "./systems/appState";
 import "./systems/suspicion"; // Ticket 3.3 — side-effect import, registers the suspicion model
 import "./systems/lockdown"; // Ticket 3.4 — side-effect import, registers the lockdown response
 import { Player } from "./player/Player";
@@ -15,6 +18,7 @@ import { telemetry } from "../ui/telemetry";
 import { Projectiles } from "./combat/Projectile";
 import { LockOnIndicator } from "./combat/LockOnIndicator";
 import { Announcer } from "./announcer/Announcer";
+import { Effects } from "./effects/Effects";
 
 /** Reports the live camera position into the telemetry bridge each frame. */
 function CameraReporter() {
@@ -25,14 +29,45 @@ function CameraReporter() {
   return null;
 }
 
+/**
+ * Slow orbital flyover used behind the title/loading screens — hands off to
+ * FollowCamera (which lerps) the moment gameplay starts, so the transition
+ * sweeps smoothly down to the player instead of cutting.
+ */
+function CinematicCamera() {
+  const camera = useThree((s) => s.camera);
+  const lookAt = useMemo(() => new Vector3(14, 2, 0), []);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime * 0.12;
+    camera.position.set(
+      14 + Math.cos(t) * 26,
+      10 + Math.sin(t * 0.7) * 4,
+      Math.sin(t) * 18,
+    );
+    camera.lookAt(lookAt);
+  });
+  return null;
+}
+
 export function Game() {
   const flightState = useRef(createFlightState(activeArena.spawn)).current;
+  const phase = useAppState((s) => s.phase);
+  const devMode = useAppState((s) => s.devMode);
 
   // Seed the respawn checkpoint from the loaded arena (Ticket 2.4) rather than
   // relying on the GameState default coincidentally matching arena-01's spawn.
   useEffect(() => {
     useGameState.getState().setCheckpoint(activeArena.spawn);
   }, []);
+
+  // Fresh run when gameplay actually starts: anything that leaked during the
+  // title/loading flyover (hazard ticks, stray damage) is wiped.
+  useEffect(() => {
+    if (phase !== "playing") return;
+    const gs = useGameState.getState();
+    gs.reset();
+    gs.setCheckpoint(activeArena.spawn);
+  }, [phase]);
 
   // Dev controls: camera mode + physics debug.
   const { cameraMode, showPhysicsDebug } = useControls("Dev", {
@@ -54,15 +89,19 @@ export function Game() {
     }),
   });
 
-  const flightActive = cameraMode === "follow";
+  const playing = phase === "playing";
+  const flightActive = playing && cameraMode === "follow";
 
   return (
     <>
-      {/* Lighting: ambient + one shadow-casting directional. */}
-      <ambientLight intensity={0.4} />
+      {/* Atmosphere: cold arena night with hot pools of colored light. */}
+      <color attach="background" args={["#05060d"]} />
+      <fog attach="fog" args={["#070a14", 45, 170]} />
+      <ambientLight intensity={0.5} color="#b8c4ff" />
       <directionalLight
         position={[20, 30, 10]}
-        intensity={1.4}
+        intensity={1.5}
+        color="#fff4e0"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -73,6 +112,20 @@ export function Game() {
         shadow-camera-top={60}
         shadow-camera-bottom={-60}
       />
+      {/* colored rim lights — cheap mood, no shadows */}
+      <directionalLight position={[-30, 12, -20]} intensity={0.5} color="#7c3aed" />
+      <directionalLight position={[10, 8, 25]} intensity={0.35} color="#0ea5e9" />
+
+      {/* Sky + drifting dust motes */}
+      <Stars radius={220} depth={60} count={2500} factor={5} saturation={0.4} fade speed={0.6} />
+      <Sparkles count={120} scale={[80, 18, 26]} position={[10, 9, 0]} size={1.6} speed={0.25} opacity={0.35} color="#9db4ff" />
+
+      {/* Local light-studio environment map so metals/armor have something to reflect. */}
+      <Environment resolution={64} frames={1}>
+        <Lightformer intensity={2} position={[0, 20, 0]} scale={[40, 40, 1]} rotation={[Math.PI / 2, 0, 0]} color="#4c5b9e" />
+        <Lightformer intensity={1.2} position={[-30, 6, 0]} scale={[20, 8, 1]} rotation={[0, Math.PI / 2, 0]} color="#7c3aed" />
+        <Lightformer intensity={1.2} position={[30, 6, 0]} scale={[20, 8, 1]} rotation={[0, -Math.PI / 2, 0]} color="#0ea5e9" />
+      </Environment>
 
       <Physics debug={showPhysicsDebug} gravity={[0, -9.81, 0]}>
         <ArenaLoader config={activeArena} />
@@ -87,17 +140,30 @@ export function Game() {
           flight input is disabled in these modes so it never fights the
           camera controls for the mouse.
         */}
-        {cameraMode === "follow" && <FollowCamera state={flightState} />}
+        {playing && cameraMode === "follow" && <FollowCamera state={flightState} />}
       </Physics>
 
-      {cameraMode === "orbit" && (
+      <Effects />
+
+      {/* Title/loading flyover */}
+      {!playing && <CinematicCamera />}
+
+      {playing && cameraMode === "orbit" && (
         <OrbitControls makeDefault target={[0, 1, 0]} maxPolarAngle={Math.PI * 0.495} />
       )}
-      {cameraMode === "freeFly" && <FlyControls movementSpeed={15} rollSpeed={0.6} dragToLook />}
+      {playing && cameraMode === "freeFly" && (
+        <FlyControls movementSpeed={15} rollSpeed={0.6} dragToLook />
+      )}
+
+      {/* Post-processing: bloom lifts every emissive/tracer/flame into a glow. */}
+      <EffectComposer>
+        <Bloom intensity={0.85} luminanceThreshold={1} mipmapBlur />
+        <Vignette eskil={false} offset={0.22} darkness={0.72} />
+      </EffectComposer>
 
       <CameraReporter />
-      <Stats />
-      <Announcer />
+      {devMode && <Stats />}
+      {playing && <Announcer />}
     </>
   );
 }
