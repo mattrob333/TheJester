@@ -93,7 +93,6 @@ bus.on("shotFired", ({ covered, owner }) => {
 // course-correction if/when arena design introduces sections.
 const DECAY_RATE_VISIBLE = 4; // suspicion points/sec while visible
 const DECAY_RATE_HIDDEN = 12; // suspicion points/sec while hidden (siren or smoke)
-const DECAY_TICK_MS = 200;
 const HAZARD_KILL_DECAY_BONUS = 15; // instant suspicion reduction on a hazard kill
 
 bus.on("enemyKilled", ({ byHazard }) => {
@@ -107,13 +106,17 @@ const DETECTED_THRESHOLD = 100;
 
 type ThresholdLevel = "none" | "warning" | "detected";
 let lastThresholdLevel: ThresholdLevel = "none";
-let lastTick = performance.now();
 
-setInterval(() => {
-  const now = performance.now();
-  const dt = (now - lastTick) / 1000;
-  lastTick = now;
-
+/**
+ * Decay + threshold detection, driven from the game loop.
+ *
+ * Previously a `setInterval` side effect — which kept decaying while the tab
+ * was hidden or the game paused, stacked duplicate intervals under HMR, and
+ * ran on a different time base than everything else. Now it's an explicit
+ * `update(dt)` called from the SystemsTicker in Game.tsx (only while the
+ * "playing" phase is active), so pausing the loop pauses the model.
+ */
+export function updateSuspicion(dt: number) {
   const hidden = coverState.sirenActive || coverState.smokeActive;
   const rate = hidden ? DECAY_RATE_HIDDEN : DECAY_RATE_VISIBLE;
   useGameState.getState().decaySuspicion(rate * dt);
@@ -133,4 +136,10 @@ setInterval(() => {
   } else {
     lastThresholdLevel = "none";
   }
-}, DECAY_TICK_MS);
+}
+
+/** Clears transient model state for a fresh run (spam window, threshold edge). */
+export function resetSuspicion() {
+  recentShotTimes.length = 0;
+  lastThresholdLevel = "none";
+}

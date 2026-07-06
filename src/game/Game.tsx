@@ -7,8 +7,13 @@ import { useControls, folder } from "leva";
 import { Vector3 } from "three";
 import { useGameState } from "./systems/gameState";
 import { useAppState } from "./systems/appState";
-import "./systems/suspicion"; // Ticket 3.3 — side-effect import, registers the suspicion model
-import "./systems/lockdown"; // Ticket 3.4 — side-effect import, registers the lockdown response
+import { updateSuspicion, resetSuspicion } from "./systems/suspicion";
+import { updateLockdown, resetLockdown } from "./systems/lockdown";
+import { resetWeapon } from "./combat/useWeapon";
+import { resetEffects } from "./effects/effects";
+import { resetSound } from "./systems/sound";
+import { resetRunStats, trackPeakSuspicion } from "./systems/runStats";
+import { lockOnState } from "./combat/lockOn";
 import { Player } from "./player/Player";
 import { createFlightState } from "./player/flightState";
 import { FollowCamera } from "./camera/FollowCamera";
@@ -19,6 +24,25 @@ import { Projectiles } from "./combat/Projectile";
 import { LockOnIndicator } from "./combat/LockOnIndicator";
 import { Announcer } from "./announcer/Announcer";
 import { Effects } from "./effects/Effects";
+
+/**
+ * SystemsTicker — hosts the game-logic systems that used to run on their own
+ * `setInterval`s (code-review §2.4). Everything now steps on the same
+ * `useFrame` dt as the rest of the simulation, and ONLY while the game is
+ * actually being played: hiding the tab, the title screen, and the victory
+ * screen all genuinely pause the model (no more suspicion decaying behind a
+ * menu, no doubled timers under HMR).
+ */
+function SystemsTicker() {
+  useFrame((_, rawDt) => {
+    if (useAppState.getState().phase !== "playing") return;
+    const dt = Math.min(rawDt, 1 / 15); // clamp tab-switch spikes
+    updateSuspicion(dt);
+    updateLockdown();
+    trackPeakSuspicion(useGameState.getState().suspicion);
+  });
+  return null;
+}
 
 /** Reports the live camera position into the telemetry bridge each frame. */
 function CameraReporter() {
@@ -52,6 +76,7 @@ function CinematicCamera() {
 export function Game() {
   const flightState = useRef(createFlightState(activeArena.spawn)).current;
   const phase = useAppState((s) => s.phase);
+  const runId = useAppState((s) => s.runId);
   const devMode = useAppState((s) => s.devMode);
 
   // Seed the respawn checkpoint from the loaded arena (Ticket 2.4) rather than
@@ -60,14 +85,28 @@ export function Game() {
     useGameState.getState().setCheckpoint(activeArena.spawn);
   }, []);
 
-  // Fresh run when gameplay actually starts: anything that leaked during the
-  // title/loading flyover (hazard ticks, stray damage) is wiped.
+  // Full run reset when gameplay starts (code-review §2.5): game state,
+  // weapon pool + cooldowns, suspicion model, lockdown (incl. its siren
+  // source), live particles, sustained sounds, stats, and the lock-on. The
+  // arena itself is remounted via key={runId} below, which resurrects dead
+  // enemies, un-greens checkpoints, and re-arms tutorial beacons.
   useEffect(() => {
     if (phase !== "playing") return;
     const gs = useGameState.getState();
     gs.reset();
     gs.setCheckpoint(activeArena.spawn);
-  }, [phase]);
+    flightState.position.set(...activeArena.spawn);
+    flightState.velocity.set(0, 0, 0);
+    flightState.yaw = -Math.PI / 2;
+    flightState.pitch = 0;
+    resetWeapon();
+    resetSuspicion();
+    resetLockdown();
+    resetEffects();
+    resetSound();
+    resetRunStats();
+    lockOnState.targetId = null;
+  }, [phase, flightState]);
 
   // Dev controls: camera mode + physics debug.
   const { cameraMode, showPhysicsDebug } = useControls("Dev", {
@@ -128,7 +167,9 @@ export function Game() {
       </Environment>
 
       <Physics debug={showPhysicsDebug} gravity={[0, -9.81, 0]}>
-        <ArenaLoader config={activeArena} />
+        {/* Keyed on runId: "play again" fully remounts the level — enemies
+            respawn, checkpoints/beacons re-arm, cover sources re-register. */}
+        <ArenaLoader key={runId} config={activeArena} />
         <Player flightState={flightState} settings={flightSettings} active={flightActive} />
         <Projectiles />
         <LockOnIndicator />
@@ -161,6 +202,7 @@ export function Game() {
         <Vignette eskil={false} offset={0.22} darkness={0.72} />
       </EffectComposer>
 
+      <SystemsTicker />
       <CameraReporter />
       {devMode && <Stats />}
       {playing && <Announcer />}

@@ -12,7 +12,9 @@
     "tut_smoke": "Step into the smoke and you're a ghost! Fire from in there and the math is even kinder to you.",
     "tut_suspicion": "Keep an eye on that meter. Spam it open and you'll spike fast — patience keeps you under their radar.",
     "tut_exit": "There's the door! Get to it clean and you've graduated, kid.",
-    "lockdown_detected": "You've been made! They're locking it down — move, move, move!"
+    "lockdown_detected": "You've been made! They're locking it down — move, move, move!",
+    "death": "Ohh, down goes the fool! Back to the last checkpoint — dust yourself off.",
+    "victory": "And the jester takes the exit! Ladies and gentlemen... what a show!"
   },
   "doubter": {
     "suspicion_warning": "Hm. Getting sloppy, aren't we? They're starting to notice."
@@ -24,6 +26,8 @@
     "suspicion_warning": "They're onto you. Let me help you slip away.",
     "tut_hazards": "Hazard ahead. I'll call out the timing — just listen and move when I say.",
     "tut_no_ammo": "Still got infinite shots on that thing. Lucky you. Just don't get cocky with it.",
-    "lockdown_detected": "They made you! Stay close — I'll help you find a way clear."
+    "lockdown_detected": "They made you! Stay close — I'll help you find a way clear.",
+    "death": "You're okay. You're okay. Checkpoint's got you — go again.",
+    "victory": "You made it. I knew you would. Now let's get you out of here."
   }
 }

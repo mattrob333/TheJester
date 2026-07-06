@@ -1,10 +1,10 @@
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useRapier } from "@react-three/rapier";
 import { AdditiveBlending, Color, InstancedMesh, Object3D, Vector3 } from "three";
 import { useWeapon } from "./useWeapon";
 import { TARGETS, getTarget } from "./targets";
 import { spawnSparks } from "../effects/effects";
-import { activeArena } from "../config/activeArena";
 
 const PROJECTILE_RADIUS = 0.12;
 const MAX_INSTANCES = 64;
@@ -22,24 +22,37 @@ const ENEMY_SPARK = 0xff5544;
  * additive-blended so they bloom, color-coded per owner (gold = player,
  * red = enemy).
  *
- * Projectiles are plain Three.js instanced meshes, not Rapier bodies — fast
- * moving spheres do tunnel-through with discrete physics, and we don't need
- * collision response, just hit detection. Hits are checked via radius against
- * the global TARGETS registry, plus a cheap AABB test against the arena
- * bounds/floor so shots visibly spark and die on world geometry instead of
- * sailing through it.
+ * Hit detection is SWEPT, not point-in-time (code-review §2.2):
+ *  - World geometry: a Rapier raycast covers the full distance moved this
+ *    frame, restricted to FIXED colliders (walls/floor) — sensors, enemies,
+ *    and the player's own body are handled separately. Shots can no longer
+ *    pass through walls, so smoke/wall cover actually blocks fire.
+ *  - Targets: segment-vs-sphere against the TARGETS registry, so a 55 m/s
+ *    bolt can't tunnel through a drone on a slow frame.
  */
 export function Projectiles() {
   const meshRef = useRef<InstancedMesh>(null);
   const weapon = useWeapon();
+  const { world, rapier } = useRapier();
   const scratch = useMemo(() => new Vector3(), []);
+  const prevPos = useMemo(() => new Vector3(), []);
+  const segment = useMemo(() => new Vector3(), []);
+  const toTargetFromStart = useMemo(() => new Vector3(), []);
   const dummy = useMemo(() => new Object3D(), []);
   const toTarget = useMemo(() => new Vector3(), []);
   const up = useMemo(() => new Vector3(0, 1, 0), []);
-
-  const halfW = activeArena.bounds.width / 2;
-  const halfD = activeArena.bounds.depth / 2;
-  const ceilingY = activeArena.bounds.height;
+  // One reusable ray — never allocate in the frame loop.
+  const ray = useMemo(() => new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }), [rapier]);
+  // Only fixed colliders count as "the world" for bullets: not sensors
+  // (triggers), not kinematic enemies (TARGETS handles those), not the
+  // dynamic player body (also in TARGETS).
+  const worldFilter = useMemo(
+    () =>
+      rapier.QueryFilterFlags.EXCLUDE_SENSORS |
+      rapier.QueryFilterFlags.EXCLUDE_KINEMATIC |
+      rapier.QueryFilterFlags.EXCLUDE_DYNAMIC,
+    [rapier],
+  );
 
   useFrame((_, dt) => {
     const list = weapon.projectiles;
@@ -65,7 +78,9 @@ export function Projectiles() {
         }
       }
 
-      p.position.addScaledVector(p.direction, p.speed * dt);
+      prevPos.copy(p.position);
+      const stepDist = p.speed * dt;
+      p.position.addScaledVector(p.direction, stepDist);
 
       scratch.copy(p.position).sub(p.origin);
       const outOfRange = scratch.lengthSq() > p.maxRange * p.maxRange;
@@ -76,26 +91,41 @@ export function Projectiles() {
         continue;
       }
 
-      // World geometry: floor, ceiling, and the four arena walls.
-      const hitWorld =
-        p.position.y <= PROJECTILE_RADIUS ||
-        p.position.y >= ceilingY ||
-        Math.abs(p.position.x) >= halfW ||
-        Math.abs(p.position.z) >= halfD;
-      if (hitWorld) {
+      // --- swept world-geometry check: raycast the full frame's travel ---
+      ray.origin.x = prevPos.x;
+      ray.origin.y = prevPos.y;
+      ray.origin.z = prevPos.z;
+      ray.dir.x = p.direction.x;
+      ray.dir.y = p.direction.y;
+      ray.dir.z = p.direction.z;
+      const worldHit = world.castRay(ray, stepDist + PROJECTILE_RADIUS, true, worldFilter);
+      if (worldHit) {
+        // Land the impact effect at the hit point, not the overshoot position.
+        p.position.copy(prevPos).addScaledVector(p.direction, Math.max(0, worldHit.timeOfImpact));
         scratch.copy(p.direction).negate();
         spawnSparks(p.position, scratch, p.owner === "player" ? PLAYER_SPARK : ENEMY_SPARK, 8, 5);
         list.splice(i, 1);
         continue;
       }
 
+      // --- swept target check: segment (prevPos -> position) vs sphere ---
       let hit = false;
+      segment.copy(p.position).sub(prevPos);
+      const segLenSq = segment.lengthSq();
       for (const target of TARGETS) {
         if (target.owner === p.owner) continue;
-        scratch.copy(p.position).sub(target.position);
         const hitDist = PROJECTILE_RADIUS + target.radius;
+        // Closest point on the travel segment to the target center.
+        toTargetFromStart.copy(target.position).sub(prevPos);
+        const t =
+          segLenSq > 1e-8
+            ? Math.min(1, Math.max(0, toTargetFromStart.dot(segment) / segLenSq))
+            : 0;
+        scratch.copy(prevPos).addScaledVector(segment, t).sub(target.position);
         if (scratch.lengthSq() <= hitDist * hitDist) {
           target.onHit(p.damage);
+          // Snap to the contact point for the spark burst.
+          p.position.copy(prevPos).addScaledVector(segment, t);
           scratch.copy(p.direction).negate();
           spawnSparks(
             p.position,

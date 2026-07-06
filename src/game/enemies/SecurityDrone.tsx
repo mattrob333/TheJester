@@ -11,6 +11,7 @@ import { fireProjectile } from "../combat/useWeapon";
 import { playerTracking } from "../player/playerTracking";
 import { spawnExplosion, spawnMuzzleLight } from "../effects/effects";
 import { useAppState } from "../systems/appState";
+import { isLockdownActive } from "../systems/lockdown";
 
 const FIRE_COOLDOWN = 1.4; // seconds between laser shots
 const DRONE_RADIUS = 0.5;
@@ -111,15 +112,25 @@ export function SecurityDrone({ config }: { config: SecurityDroneConfig }) {
       useAppState.getState().phase === "playing" &&
       distToPlayer <= config.sightRange;
 
-    if (tracking && distToPlayer > 1e-4 && now - lastFire.current >= FIRE_COOLDOWN) {
-      lastFire.current = now;
+    // Lockdown doubles the fire rate — detection should threaten, not just
+    // hand the player a free siren-cover discount.
+    const fireCooldown = FIRE_COOLDOWN * (isLockdownActive() ? 0.5 : 1);
+    if (tracking && distToPlayer > 1e-4 && now - lastFire.current >= fireCooldown) {
       const dir = toPlayer.clone().normalize();
       muzzleWorld.copy(position).addScaledVector(dir, 0.7);
-      fireProjectile(muzzleWorld, dir, {
+      // The weapon system owns the cooldown per shooter id; only mark a shot
+      // taken if one actually spawned (the old code marked it regardless —
+      // code-review §2.1).
+      const fired = fireProjectile(muzzleWorld, dir, {
         owner: "enemy",
+        shooterId: id,
+        cooldown: fireCooldown,
         covered: coverState.sirenActive || coverState.smokeActive,
       });
-      spawnMuzzleLight(muzzleWorld, 0xff4444);
+      if (fired) {
+        lastFire.current = now;
+        spawnMuzzleLight(muzzleWorld, 0xff4444);
+      }
     }
 
     // Hover bob — the collider position stays synced to the bobbing height.

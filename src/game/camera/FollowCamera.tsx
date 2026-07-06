@@ -52,6 +52,9 @@ export function FollowCamera({ state }: { state: FlightState }) {
   const lookTarget = useMemo(() => new Vector3(), []);
   const currentLook = useMemo(() => state.position.clone().add(eyeOffset), [state, eyeOffset]);
   const euler = useMemo(() => new Euler(0, 0, 0, "YXZ"), []);
+  // One reusable ray — the previous `new rapier.Ray(...)` per frame was the
+  // lone GC leak in an otherwise allocation-free loop (code-review §2.6).
+  const ray = useMemo(() => new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }), [rapier]);
 
   useFrame(({ clock }, dt) => {
     euler.set(state.pitch * PITCH_INFLUENCE, state.yaw, 0);
@@ -64,7 +67,12 @@ export function FollowCamera({ state }: { state: FlightState }) {
 
     if (dist > 1e-4) {
       dir.normalize();
-      const ray = new rapier.Ray(origin, dir);
+      ray.origin.x = origin.x;
+      ray.origin.y = origin.y;
+      ray.origin.z = origin.z;
+      ray.dir.x = dir.x;
+      ray.dir.y = dir.y;
+      ray.dir.z = dir.z;
       // solid=false: a ray starting inside the player's own collider won't
       // register a false hit against it, only against geometry it actually
       // crosses. EXCLUDE_SENSORS: checkpoint/hazard/beacon trigger volumes

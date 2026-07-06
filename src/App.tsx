@@ -7,6 +7,8 @@ import { DamageFlash } from "./ui/DamageFlash";
 import { Hud } from "./ui/Hud";
 import { TitleScreen } from "./ui/TitleScreen";
 import { LoadingScreen } from "./ui/LoadingScreen";
+import { VictoryScreen } from "./ui/VictoryScreen";
+import { DeathOverlay } from "./ui/DeathOverlay";
 import { useAppState } from "./game/systems/appState";
 
 /**
@@ -46,8 +48,10 @@ export default function App() {
       {/* HTML overlay layers (outside the canvas). */}
       <Hud />
       {phase === "playing" && <DamageFlash />}
+      {phase === "playing" && <DeathOverlay />}
       <TitleScreen />
       <LoadingScreen />
+      <VictoryScreen />
       {devMode && <DebugOverlay />}
       <Leva collapsed hidden={!devMode} />
     </div>

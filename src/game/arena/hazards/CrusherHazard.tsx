@@ -2,8 +2,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody, CuboidCollider } from "@react-three/rapier";
 import { Vector3, type Mesh, type MeshStandardMaterial } from "three";
-import { useGameState } from "../../systems/gameState";
-import { bus } from "../../systems/events";
+import { applyPlayerDamage } from "../../systems/playerDamage";
 import { telemetry } from "../../../ui/telemetry";
 import { cyclePhase, HAZARD_COLOR, HIT_COOLDOWN, TELEGRAPH_DURATION } from "./hazardTiming";
 import { spawnSparks, addTrauma } from "../../effects/effects";
@@ -78,10 +77,12 @@ export function CrusherHazard({ config }: { config: CrusherHazardConfig }) {
 
     if (overlapCount.current > 0) {
       telemetry.hazardPhase = `crusher:${phase}`;
-      if (phase === "active" && now - lastHit.current >= HIT_COOLDOWN) {
+      if (
+        phase === "active" &&
+        now - lastHit.current >= HIT_COOLDOWN &&
+        applyPlayerDamage(DAMAGE, "crusher")
+      ) {
         lastHit.current = now;
-        useGameState.getState().damage(DAMAGE);
-        bus.emit("playerDamaged", { amount: DAMAGE, source: "crusher" });
       }
     } else if (telemetry.hazardPhase?.startsWith("crusher:")) {
       telemetry.hazardPhase = null;

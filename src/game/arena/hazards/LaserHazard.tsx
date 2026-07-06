@@ -2,8 +2,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody, CuboidCollider } from "@react-three/rapier";
 import { AdditiveBlending, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial } from "three";
-import { useGameState } from "../../systems/gameState";
-import { bus } from "../../systems/events";
+import { applyPlayerDamage } from "../../systems/playerDamage";
 import { telemetry } from "../../../ui/telemetry";
 import { cyclePhase, HIT_COOLDOWN } from "./hazardTiming";
 import type { LaserHazardConfig } from "../../types";
@@ -88,10 +87,8 @@ export function LaserHazard({ config }: { config: LaserHazardConfig }) {
     }
 
     if (phase === "active" && overlapCount.current > 0) {
-      if (now - lastHit.current >= HIT_COOLDOWN) {
+      if (now - lastHit.current >= HIT_COOLDOWN && applyPlayerDamage(DAMAGE, "laser")) {
         lastHit.current = now;
-        useGameState.getState().damage(DAMAGE);
-        bus.emit("playerDamaged", { amount: DAMAGE, source: "laser" });
       }
     }
     if (overlapCount.current > 0) {

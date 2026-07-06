@@ -1,7 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { RigidBody, BallCollider } from "@react-three/rapier";
 import type { Group, Mesh } from "three";
 import type { ArenaConfig, Vec3 } from "../types";
+import { useAppState } from "../systems/appState";
+import { bus } from "../systems/events";
+import { finishRunStats } from "../systems/runStats";
+import { triggerBark } from "../announcer/Announcer";
 import { activeArena } from "../config/activeArena";
 import { Floor } from "./Floor";
 import { Bounds } from "./Bounds";
@@ -54,13 +59,26 @@ function SpawnPad({ pos }: { pos: Vec3 }) {
 }
 
 /**
- * Exit portal — a tall spinning double-ring gate with a light column, placed
- * where the old red marker sphere floated. Reads from across the arena.
+ * Exit portal — a tall spinning double-ring gate with a light column. No
+ * longer decorative: flying through it WINS THE RUN (review §4 "there is no
+ * win condition") — stats freeze and the victory screen takes over.
  */
 function ExitPortal({ pos }: { pos: Vec3 }) {
   const outerRef = useRef<Mesh>(null);
   const innerRef = useRef<Mesh>(null);
   const coreRef = useRef<Group>(null);
+  const wonRef = useRef(false);
+
+  const handleEnter = () => {
+    if (wonRef.current) return;
+    if (useAppState.getState().phase !== "playing") return;
+    wonRef.current = true;
+    finishRunStats();
+    triggerBark("victory");
+    bus.emit("runWon", {});
+    useAppState.getState().winRun();
+  };
+
   useFrame(({ clock }, dt) => {
     const t = clock.elapsedTime;
     if (outerRef.current) outerRef.current.rotation.z += dt * 0.6;
@@ -69,6 +87,10 @@ function ExitPortal({ pos }: { pos: Vec3 }) {
   });
   return (
     <group position={pos}>
+      {/* win trigger — covers the whole ring so any pass through counts */}
+      <RigidBody type="fixed" colliders={false}>
+        <BallCollider args={[2.2]} sensor onIntersectionEnter={handleEnter} />
+      </RigidBody>
       {/* rings face the corridor (normal along X) */}
       <group rotation={[0, Math.PI / 2, 0]}>
         <mesh ref={outerRef}>
@@ -128,11 +150,6 @@ function ExitPortal({ pos }: { pos: Vec3 }) {
 }
 
 export function ArenaLoader({ config = activeArena }: { config?: ArenaConfig }) {
-  useEffect(() => {
-    // Prove the data-driven load works end-to-end.
-    console.info("[ArenaLoader] loaded arena:", config);
-  }, [config]);
-
   return (
     <group>
       <Floor width={config.bounds.width} depth={config.bounds.depth} />

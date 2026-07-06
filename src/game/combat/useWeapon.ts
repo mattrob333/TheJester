@@ -20,7 +20,7 @@ export interface ProjectileDescriptor {
   targetId: string | null;
 }
 
-export const FIRE_COOLDOWN = 0.16; // seconds (player); enemies pace themselves
+export const FIRE_COOLDOWN = 0.16; // seconds — the player's trigger rate
 const PROJECTILE_SPEED = 55; // m/s
 const MAX_LIFETIME = 1.5; // seconds
 const MAX_RANGE = 70; // meters
@@ -29,14 +29,17 @@ const ENEMY_DAMAGE = 8;
 
 const state = {
   projectiles: [] as ProjectileDescriptor[],
-  /**
-   * Per-owner cooldown stamps. These MUST be separate: with a single shared
-   * stamp, an enemy firing would silently gate the player's next shot (and
-   * vice versa) — an actual bug in the original single-`lastFire` version.
-   */
-  lastFire: -Infinity, // player (name kept for the debug overlay readout)
-  lastEnemyFire: -Infinity,
+  /** Mirror of the player's cooldown stamp, kept for the debug overlay readout. */
+  lastFire: -Infinity,
 };
+
+/**
+ * Cooldown belongs to the SHOOTER, not the projectile system: one stamp per
+ * shooter id. The original single shared `lastFire` meant a drone firing
+ * would silently eat the player's next shot (and drones gated each other) —
+ * the code-review's §2.1 bug.
+ */
+const cooldownByShooter = new Map<string, number>();
 
 /**
  * Module-scoped weapon state shared by the spawner (Player.tsx) and the
@@ -46,25 +49,41 @@ export function useWeapon() {
   return state;
 }
 
+/** Clears the projectile pool and all cooldown stamps for a fresh run. */
+export function resetWeapon() {
+  state.projectiles.length = 0;
+  state.lastFire = -Infinity;
+  cooldownByShooter.clear();
+}
+
+export interface FireOptions {
+  covered?: boolean;
+  owner?: ProjectileOwner;
+  targetId?: string | null;
+  /** Unique id of whoever pulled the trigger. Defaults to the owner string (fine for the single player; enemies should pass their own id). */
+  shooterId?: string;
+  /** Seconds between this shooter's shots. Defaults to the player trigger rate. */
+  cooldown?: number;
+}
+
 /**
  * Attempt to fire a projectile. Returns true if a shot was spawned (i.e. the
- * owner's cooldown had elapsed). Emits `shotFired` for gameplay observers.
+ * shooter's own cooldown had elapsed). Emits `shotFired` for gameplay observers.
  */
 export function fireProjectile(
   origin: Vector3,
   direction: Vector3,
-  options: { covered?: boolean; owner?: ProjectileOwner; targetId?: string | null } = {},
+  options: FireOptions = {},
 ): boolean {
   const now = performance.now() / 1000;
   const owner = options.owner ?? "player";
+  const shooterId = options.shooterId ?? owner;
+  const cooldown = options.cooldown ?? FIRE_COOLDOWN;
 
-  if (owner === "player") {
-    if (now - state.lastFire < FIRE_COOLDOWN) return false;
-    state.lastFire = now;
-  } else {
-    if (now - state.lastEnemyFire < 0.05) return false;
-    state.lastEnemyFire = now;
-  }
+  const last = cooldownByShooter.get(shooterId) ?? -Infinity;
+  if (now - last < cooldown) return false;
+  cooldownByShooter.set(shooterId, now);
+  if (shooterId === "player") state.lastFire = now;
 
   const covered = options.covered ?? false;
   bus.emit("shotFired", { covered, owner });

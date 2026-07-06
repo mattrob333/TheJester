@@ -95,13 +95,39 @@ overlay) is hidden by default — press **`** (backquote) to toggle it.
 - A red vignette flashes on screen and a translucent halo flashes around the
   player on every hit (Ticket 2.3 "suit damage" feedback).
 
+### The game loop
+
+- **Win condition:** fly through the exit portal → "ARENA CLEARED" stats
+  screen (time, shots, kills, deaths, peak suspicion) → play again with a
+  fully reset arena (dead enemies respawn, checkpoints/beacons re-arm).
+- **Death ceremony:** health hitting 0 triggers a 1.3s "ELIMINATED" beat
+  (explosion, announcer bark, screen fade) before the checkpoint respawn —
+  and HALF your suspicion carries over, so stealth failures have weight.
+  A 2s spawn shield stops anything from chain-killing you at the checkpoint.
+- **Lockdown threatens now:** drones fire twice as fast and guards chase 50%
+  faster while you're detected.
+- **Synthesized audio** (WebAudio, zero asset files): shots, hits, kill
+  explosions, checkpoint chimes, the lockdown siren wail, death sting, and a
+  victory fanfare.
+
 ### Combat & feedback
 
 - Enemy projectiles now actually hit the player (the player registers in the
-  shared target registry), and fire cooldowns are tracked **per owner** so
-  drones can't silently eat the player's shots.
+  shared target registry), and fire cooldowns are tracked **per shooter** so
+  drones can't silently eat the player's shots (or each other's).
+- Projectile hit detection is **swept** (Rapier raycast vs level geometry +
+  segment-vs-sphere vs targets): shots can't pass through walls or tunnel
+  through targets on slow frames, so cover genuinely blocks fire.
 - Projectiles deal scaled damage (player bolts 6, drone lasers 8) instead of
   1-per-hit, spark on world geometry, and enemies explode on death.
+- Guards chase on the horizontal plane (no floating after a flying player),
+  stay ground-clamped and inside the arena, and leash to their patrol home
+  with hysteresis.
+- The suspicion meter flashes **▲ SEEN** (red) or **● COVERED** (green) on
+  every shot, teaching the cover system wordlessly; a LOCKDOWN banner shows
+  while detected.
+- Suspicion decay and lockdown clearing now run on the game loop's `dt`
+  (paused whenever the game is paused/menued) instead of `setInterval`s.
 - Camera juice: trauma-based screen shake on hits/explosions and an FOV kick
   with speed/boost.
 - HUD: hull bar, suspicion meter, crosshair, and speed readout (hidden on the

@@ -1,4 +1,5 @@
 import { useAppState } from "../game/systems/appState";
+import { initSound } from "../game/systems/sound";
 
 /**
  * Title screen — overlays the slow cinematic arena flyover rendered by the
@@ -23,7 +24,15 @@ export function TitleScreen() {
         </h1>
         <div style={styles.subtitle}>a jetpack arena game</div>
 
-        <button style={styles.startButton} onClick={startLoading} autoFocus>
+        <button
+          style={styles.startButton}
+          onClick={() => {
+            // AudioContext must be created inside a user gesture.
+            initSound();
+            startLoading();
+          }}
+          autoFocus
+        >
           ▶&nbsp; ENTER THE ARENA
         </button>
 

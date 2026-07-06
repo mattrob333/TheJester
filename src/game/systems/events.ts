@@ -19,6 +19,10 @@ export type GameEvents = {
   lockdownActive: { on: boolean };
   /** Ticket 5.1 — announcer bark resolved to display text, for the HUD caption. */
   announcerLine: { text: string };
+  /** Health hit 0 — fired once per death, at the START of the death beat (before the respawn teleport). */
+  playerDied: Record<string, never>;
+  /** The player reached the exit portal — the run is won. */
+  runWon: Record<string, never>;
 };
 
 /**

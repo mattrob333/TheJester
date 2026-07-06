@@ -23,7 +23,7 @@ export function TargetDummy({ config }: { config: TargetDummyConfig }) {
     position,
     radius: config.radius,
     owner: "enemy" as const,
-    onHit: (_damage: number) => {
+    onHit: () => {
       flashStart.current = performance.now() / 1000;
     },
   }).current;

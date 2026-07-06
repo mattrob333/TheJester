@@ -3,12 +3,18 @@ import { useFrame } from "@react-three/fiber";
 import { RigidBody, CapsuleCollider, type RapierRigidBody } from "@react-three/rapier";
 import { Group, MathUtils, Vector3, type MeshStandardMaterial } from "three";
 import type { ArenaGuardConfig } from "../types";
-import { useGameState } from "../systems/gameState";
 import { bus } from "../systems/events";
+import { applyPlayerDamage } from "../systems/playerDamage";
 import { registerTarget, unregisterTarget, type Targetable } from "../combat/targets";
 import { playerTracking } from "../player/playerTracking";
 import { spawnExplosion } from "../effects/effects";
 import { useAppState } from "../systems/appState";
+import { isLockdownActive } from "../systems/lockdown";
+import { activeArena } from "../config/activeArena";
+
+// Keep kinematic guards inside the arena shell (walls are 0.5 thick + guard radius).
+const BOUND_X = activeArena.bounds.width / 2 - 1;
+const BOUND_Z = activeArena.bounds.depth / 2 - 1;
 
 type GuardState = "patrol" | "chase" | "attack" | "dead";
 
@@ -58,6 +64,7 @@ export function ArenaGuard({ config }: { config: ArenaGuardConfig }) {
   const flashStart = useRef(-Infinity);
   const facing = useRef(0); // smoothed yaw
   const walkPhase = useRef(0);
+  const engaged = useRef(false); // leash hysteresis state
   const [dead, setDead] = useState(false);
 
   const toPlayer = useMemo(() => new Vector3(), []);
@@ -96,16 +103,20 @@ export function ArenaGuard({ config }: { config: ArenaGuardConfig }) {
 
     // Enemies stay passive (patrol only) until the match actually starts —
     // otherwise they maul the player at spawn while the title screen is up.
-    // Leash: the guard only engages while the player is near its patrol HOME,
-    // so it can't be kited across the arena (or camp the spawn pad).
+    // Leash with hysteresis: engage while the player is near the patrol HOME
+    // (CHASE_RANGE), but once engaged keep pressure until they're clearly out
+    // (CHASE_RANGE + 4) — no flip-flopping at the boundary, and no kiting the
+    // guard across the whole arena.
     const distFromHome = Math.hypot(
       playerTracking.position.x - config.pos[0],
       playerTracking.position.z - config.pos[2],
     );
+    const leashRange = engaged.current ? CHASE_RANGE + 4 : CHASE_RANGE;
     const live =
       playerTracking.alive &&
       useAppState.getState().phase === "playing" &&
-      distFromHome <= CHASE_RANGE;
+      distFromHome <= leashRange;
+    engaged.current = live && distToPlayer <= CHASE_RANGE;
 
     if (live && distToPlayer <= ATTACK_RANGE) {
       stateRef.current = "attack";
@@ -121,17 +132,20 @@ export function ArenaGuard({ config }: { config: ArenaGuardConfig }) {
 
     if (stateRef.current === "attack") {
       targetYaw = Math.atan2(toPlayer.x, toPlayer.z);
-      if (now - lastAttack.current >= ATTACK_COOLDOWN) {
+      if (now - lastAttack.current >= ATTACK_COOLDOWN && applyPlayerDamage(ATTACK_DAMAGE, "arena-guard")) {
         lastAttack.current = now;
-        useGameState.getState().damage(ATTACK_DAMAGE);
-        bus.emit("playerDamaged", { amount: ATTACK_DAMAGE, source: "arena-guard" });
       }
     } else if (stateRef.current === "chase") {
-      if (distToPlayer > 1e-4) {
+      // Chase on the horizontal plane only — a ground unit must not float up
+      // after a flying player (code-review §2.3). Lockdown makes it MEAN.
+      toPlayer.y = 0;
+      const planarDist = toPlayer.length();
+      if (planarDist > 1e-4) {
         toPlayer.normalize();
-        position.addScaledVector(toPlayer, CHASE_SPEED * dt);
+        const chaseSpeed = CHASE_SPEED * (isLockdownActive() ? 1.5 : 1);
+        position.addScaledVector(toPlayer, chaseSpeed * dt);
         targetYaw = Math.atan2(toPlayer.x, toPlayer.z);
-        moveSpeed = CHASE_SPEED;
+        moveSpeed = chaseSpeed;
       }
     } else {
       // Patrol back and forth along X around the spawn pos; drift back to the
@@ -146,6 +160,14 @@ export function ArenaGuard({ config }: { config: ArenaGuardConfig }) {
       targetYaw = Math.atan2(patrolDir.current, 0);
       moveSpeed = PATROL_SPEED;
     }
+
+    // Ground clamp: the guard walks at its configured height, always — no
+    // sinking, no hovering, no drifting upward out of a chase.
+    position.y = config.pos[1];
+    // Arena-bounds clamp so kiting can't steer it through a wall (kinematic
+    // bodies don't collision-resolve on their own).
+    position.x = MathUtils.clamp(position.x, -BOUND_X, BOUND_X);
+    position.z = MathUtils.clamp(position.z, -BOUND_Z, BOUND_Z);
 
     body.setTranslation({ x: position.x, y: position.y, z: position.z }, true);
 

@@ -52,6 +52,13 @@ export function addTrauma(amount: number) {
   shake.trauma = Math.min(1, shake.trauma + amount);
 }
 
+/** Clears all live particles/flashes/shake for a fresh run. */
+export function resetEffects() {
+  particles.length = 0;
+  lightFlashes.length = 0;
+  shake.trauma = 0;
+}
+
 const scratchDir = new Vector3();
 
 function push(p: Particle) {

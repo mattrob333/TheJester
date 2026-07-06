@@ -41,7 +41,6 @@ import { triggerBark } from "../announcer/Announcer";
  */
 
 const LOCKDOWN_SIREN_SOURCE_ID = "lockdown";
-const CLEAR_POLL_MS = 250;
 
 let lockdownActive = false;
 
@@ -64,12 +63,22 @@ bus.on("suspicionThreshold", ({ level }) => {
   // from the original 3.4 ticket; the announcer line half shipped above.
 });
 
-setInterval(() => {
+/**
+ * Clear check, driven from the game loop (SystemsTicker in Game.tsx) instead
+ * of a `setInterval` — so a paused game can't silently clear a lockdown, and
+ * HMR can't stack duplicate timers.
+ */
+export function updateLockdown() {
   if (!lockdownActive) return;
   if (useGameState.getState().suspicion <= 0) {
     setLockdown(false);
   }
-}, CLEAR_POLL_MS);
+}
+
+/** Force-clears lockdown (including its siren source) for a fresh run. */
+export function resetLockdown() {
+  setLockdown(false);
+}
 
 export function isLockdownActive(): boolean {
   return lockdownActive;

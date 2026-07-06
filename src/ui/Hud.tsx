@@ -26,7 +26,31 @@ export function Hud() {
   const suspicion = useGameState((s) => s.suspicion);
   const [caption, setCaption] = useState<string | null>(null);
   const [speed, setSpeed] = useState(0);
+  const [lockdown, setLockdown] = useState(false);
+  /** null = no recent shot; otherwise whether the last shot was covered. */
+  const [shotTick, setShotTick] = useState<"open" | "covered" | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shotTickTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Teach the suspicion system wordlessly (review §4): every player shot
+  // flashes the suspicion meter — angry red for an open shot, calm cyan-green
+  // for a covered one — at the exact moment the cost is (or isn't) paid.
+  useEffect(() => {
+    const onShot = ({ owner, covered }: { owner: string; covered: boolean }) => {
+      if (owner !== "player") return;
+      setShotTick(covered ? "covered" : "open");
+      if (shotTickTimeout.current) clearTimeout(shotTickTimeout.current);
+      shotTickTimeout.current = setTimeout(() => setShotTick(null), 320);
+    };
+    const onLockdown = ({ on }: { on: boolean }) => setLockdown(on);
+    bus.on("shotFired", onShot);
+    bus.on("lockdownActive", onLockdown);
+    return () => {
+      bus.off("shotFired", onShot);
+      bus.off("lockdownActive", onLockdown);
+      if (shotTickTimeout.current) clearTimeout(shotTickTimeout.current);
+    };
+  }, []);
 
   useEffect(() => {
     const handler = ({ text }: { text: string }) => {
@@ -100,10 +124,30 @@ export function Hud() {
           />
         </div>
         <div style={{ ...barLabelStyle, marginTop: 8 }}>
-          <span>SUSPICION</span>
+          <span>
+            SUSPICION
+            {shotTick === "open" && <span style={{ color: "#ef4444", marginLeft: 6 }}>▲ SEEN</span>}
+            {shotTick === "covered" && <span style={{ color: "#34d399", marginLeft: 6 }}>● COVERED</span>}
+          </span>
           <span>{Math.round(suspicion)}%</span>
         </div>
-        <div style={barTrackStyle}>
+        <div
+          style={{
+            ...barTrackStyle,
+            border:
+              shotTick === "open"
+                ? "1px solid rgba(239,68,68,0.95)"
+                : shotTick === "covered"
+                  ? "1px solid rgba(52,211,153,0.95)"
+                  : barTrackStyle.border,
+            boxShadow:
+              shotTick === "open"
+                ? "0 0 12px rgba(239,68,68,0.8)"
+                : shotTick === "covered"
+                  ? "0 0 12px rgba(52,211,153,0.7)"
+                  : undefined,
+          }}
+        >
           <div
             style={{
               ...barFillStyle,
@@ -114,6 +158,30 @@ export function Hud() {
           />
         </div>
       </div>
+
+      {/* lockdown alert */}
+      {lockdown && (
+        <div
+          style={{
+            position: "absolute",
+            top: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "8px 22px",
+            background: "rgba(127,29,29,0.85)",
+            border: "1px solid rgba(248,113,113,0.9)",
+            borderRadius: 8,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 14,
+            letterSpacing: 3,
+            textShadow: "0 0 10px rgba(239,68,68,0.9)",
+            animation: "jester-bob 0.6s ease-in-out infinite",
+          }}
+        >
+          ⚠ LOCKDOWN — GO DARK ⚠
+        </div>
+      )}
 
       {/* bottom-right: speed */}
       <div

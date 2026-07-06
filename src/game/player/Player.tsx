@@ -14,7 +14,11 @@ import { findNearestTarget } from "../combat/targeting";
 import { lockOnState } from "../combat/lockOn";
 import { playerTracking } from "./playerTracking";
 import { registerTarget, unregisterTarget, type Targetable } from "../combat/targets";
-import { addTrauma, spawnMuzzleLight } from "../effects/effects";
+import { applyPlayerDamage, grantSpawnShield } from "../systems/playerDamage";
+import { addTrauma, spawnMuzzleLight, spawnExplosion } from "../effects/effects";
+import { triggerBark } from "../announcer/Announcer";
+import { useAppState } from "../systems/appState";
+import { activeArena } from "../config/activeArena";
 import { JesterModel, createJesterAnim, type JesterAnim } from "./JesterModel";
 
 /**
@@ -61,6 +65,8 @@ const LOCK_ON_MAX_RANGE = 50; // meters
 const LOCK_ON_CONE_ANGLE = MathUtils.degToRad(25); // half-angle
 
 const MUZZLE_FLASH_COLOR = 0xffc93d;
+/** How long the death beat lasts before the checkpoint teleport. */
+const DEATH_BEAT_SECONDS = 1.3;
 
 function PlayerGlbModel() {
   const { scene } = loadGltf(PLAYER_MODEL_URL);
@@ -190,6 +196,22 @@ export function Player({ flightState, settings, active }: PlayerProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const input = useFlightInput(active ? gl.domElement : null);
   const anim = useMemo(() => createJesterAnim(), []);
+  /** Clock time the current death beat started, or null while alive. */
+  const deathAt = useRef<number | null>(null);
+  const runId = useAppState((s) => s.runId);
+
+  // New run → teleport the physics body back to spawn (the RigidBody's
+  // position prop only applies at mount, and the player isn't remounted
+  // between runs — only the arena is).
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const [sx, sy, sz] = activeArena.spawn;
+    body.setTranslation({ x: sx, y: sy, z: sz }, true);
+    body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    deathAt.current = null;
+    grantSpawnShield();
+  }, [runId]);
 
   // Enemy projectiles need something to hit — register the player in the
   // shared target registry. `flightState.position` is the live per-frame
@@ -201,10 +223,7 @@ export function Player({ flightState, settings, active }: PlayerProps) {
       radius: PLAYER_TARGET_RADIUS,
       owner: "player",
       onHit: (damage) => {
-        const gs = useGameState.getState();
-        if (gs.health <= 0) return;
-        gs.damage(damage);
-        bus.emit("playerDamaged", { amount: damage, source: "drone-laser" });
+        applyPlayerDamage(damage, "drone-laser");
       },
     };
     registerTarget(playerTarget);
@@ -228,20 +247,36 @@ export function Player({ flightState, settings, active }: PlayerProps) {
     const body = bodyRef.current;
     if (!body) return;
 
-    // Elimination respawn (Ticket 2.4): teleport to the last checkpoint,
-    // clear velocity, restore health, and reset suspicion.
+    // Death ceremony (Ticket 2.4 respawn + review §4 "death has no weight"):
+    // health hitting 0 starts a short death beat — explosion, bark, screen
+    // fade (DeathOverlay listens for `playerDied`), frozen in place — THEN
+    // the checkpoint teleport. Dying also keeps half your suspicion now, so
+    // stealth failures carry forward instead of death being a free wipe.
     const gs = useGameState.getState();
-    playerTracking.alive = gs.health > 0;
-    if (gs.health <= 0) {
-      const [cx, cy, cz] = gs.checkpoint;
-      body.setTranslation({ x: cx, y: cy, z: cz }, true);
+    if (gs.health <= 0 && deathAt.current === null) {
+      deathAt.current = frame.clock.elapsedTime;
+      playerTracking.alive = false;
       body.setLinvel(zero, true);
-      flightState.position.set(cx, cy, cz);
+      bus.emit("playerDied", {});
+      triggerBark("death");
+      spawnExplosion(flightState.position, 0xc026d3, 0.9);
+    }
+    if (deathAt.current !== null) {
+      playerTracking.alive = false;
+      body.setLinvel(zero, true);
       flightState.velocity.set(0, 0, 0);
       flightState.speed = 0;
-      gs.respawn();
+      if (frame.clock.elapsedTime - deathAt.current >= DEATH_BEAT_SECONDS) {
+        const [cx, cy, cz] = gs.checkpoint;
+        body.setTranslation({ x: cx, y: cy, z: cz }, true);
+        flightState.position.set(cx, cy, cz);
+        gs.respawn();
+        grantSpawnShield();
+        deathAt.current = null;
+      }
       return;
     }
+    playerTracking.alive = true;
 
     if (active) {
       telemetry.inputMode = input.locked ? "locked" : input.dragActive ? "drag" : "inactive";

@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody, CylinderCollider } from "@react-three/rapier";
 import { Vector3, type Group, type MeshStandardMaterial } from "three";
-import { useGameState } from "../../systems/gameState";
-import { bus } from "../../systems/events";
+import { applyPlayerDamage } from "../../systems/playerDamage";
 import { telemetry } from "../../../ui/telemetry";
 import { HIT_COOLDOWN } from "./hazardTiming";
 import { setSirenSourceActive, clearSirenSource } from "../../systems/coverState";
@@ -49,10 +48,8 @@ export function RazorHazard({ config }: { config: RazorHazardConfig }) {
     }
     if (overlapCount.current > 0) {
       telemetry.hazardPhase = "razor:active";
-      if (now - lastHit.current >= HIT_COOLDOWN) {
+      if (now - lastHit.current >= HIT_COOLDOWN && applyPlayerDamage(DAMAGE, "razor")) {
         lastHit.current = now;
-        useGameState.getState().damage(DAMAGE);
-        bus.emit("playerDamaged", { amount: DAMAGE, source: "razor" });
         spawnSparks(worldPos, null, 0xff6644, 14, 9);
       }
     } else if (telemetry.hazardPhase?.startsWith("razor:")) {
